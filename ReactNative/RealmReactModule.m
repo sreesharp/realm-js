@@ -43,15 +43,28 @@ RCT_EXPORT_MODULE()
 
     id contextExecutor = RCTGetLatestExecutor();
     [contextExecutor executeBlockOnJavaScriptQueue:^{
-        Ivar ivar = class_getInstanceVariable([contextExecutor class], "_context");
-        RCTJavaScriptContext *rctJSContext = object_getIvar(contextExecutor, ivar);
-        JSGlobalContextRef ctx;
-        if (rctJSContext) {
-            ctx = rctJSContext.ctx;
+        JSContextRef ctx;
+        if ([contextExecutor isKindOfClass:NSClassFromString(@"RCTWebViewExecutor")]) {
+            Ivar ivar = class_getInstanceVariable([contextExecutor class], "_webView");
+            UIWebView *webView = object_getIvar(contextExecutor, ivar);
+            if (!webView) {
+                webView = [[UIWebView alloc] init];
+                object_setIvar(contextExecutor, ivar, webView);
+            }
+            JSContext *jsctx = [webView valueForKeyPath:@"documentView.webView.mainFrame.javaScriptContext"];
+            ctx = jsctx.JSGlobalContextRef;
         }
         else {
-            ctx = JSGlobalContextCreate(NULL);
-            object_setIvar(contextExecutor, ivar, [[RCTJavaScriptContext alloc] initWithJSContext:ctx]);
+            Ivar ivar = class_getInstanceVariable([contextExecutor class], "_context");
+            RCTJavaScriptContext *rctJSContext = object_getIvar(contextExecutor, ivar);
+            if (rctJSContext) {
+                ctx = rctJSContext.ctx;
+            }
+            else {
+                JSGlobalContextRef gctx = JSGlobalContextCreate(NULL);
+                object_setIvar(contextExecutor, ivar, [[RCTJavaScriptContext alloc] initWithJSContext:gctx]);
+                ctx = gctx;
+            }
         }
 
         [RealmJS initializeContext:ctx];
