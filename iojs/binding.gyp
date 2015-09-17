@@ -3,11 +3,13 @@
     {
       "target_name": "Realm",
       "sources": [ 
-        "../src/object-store/object_accessor.cpp",
+        	"../src/object-store/object_accessor.cpp",
 		    "../src/object-store/object_schema.cpp",
 		    "../src/object-store/object_store.cpp",
 		    "../src/object-store/results.cpp",
-		    "../src/object-store/shared_realm.cpp",
+		    "../src/object-store/index_set.cpp",
+		    "../src/object-store/schema.cpp",
+		    "../src/object-store/transact_log_handler.cpp",
         "iorealm.cc",
         "realm.cc",
         "realmobject.cc",
