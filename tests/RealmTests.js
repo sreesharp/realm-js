@@ -21,7 +21,7 @@
 var RealmTests = {
     testRealmConstructorPath: function() {
         TestCase.assertThrows(function() { new Realm('/invalidpath'); });
-        TestCase.assertThrows(function() { new Realm(TestUtil.realmPathForFile('test1.realm'), 'invalidArgument'); });
+        TestCase.assertThrows(function() { new Realm(TestCase.realmPathForFile('test1.realm'), 'invalidArgument'); });
 
         var defaultRealm = new Realm({schema: []});
         TestCase.assertEqual(defaultRealm.path, Realm.defaultPath);
@@ -29,12 +29,12 @@ var RealmTests = {
         var defaultRealm2 = new Realm();
         TestCase.assertEqual(defaultRealm2.path, Realm.defaultPath);
 
-        var testPath = TestUtil.realmPathForFile('test1.realm');
+        var testPath = TestCase.realmPathForFile('test1.realm');
         var realm = new Realm({schema: [], path: testPath});
         //TestCase.assertTrue(realm instanceof Realm);
         TestCase.assertEqual(realm.path, testPath);
 
-        var testPath2 = TestUtil.realmPathForFile('test2.realm');
+        var testPath2 = TestCase.realmPathForFile('test2.realm');
         var realm2 = new Realm({schema: [], path: testPath2});
         //TestCase.assertTrue(realm2 instanceof Realm);
         TestCase.assertEqual(realm2.path, testPath2);
@@ -51,7 +51,7 @@ var RealmTests = {
         TestCase.assertEqual(new Realm().schemaVersion, 0);
         TestCase.assertEqual(new Realm({schemaVersion: 0}).schemaVersion, 0);
 
-        var testPath = TestUtil.realmPathForFile('test1.realm');
+        var testPath = TestCase.realmPathForFile('test1.realm');
         var realm = new Realm({path: testPath, schema: [], schemaVersion: 1});
         TestCase.assertEqual(realm.schemaVersion, 1);
 
@@ -63,7 +63,7 @@ var RealmTests = {
         var defaultRealm = new Realm({schema: []});
         TestCase.assertEqual(defaultRealm.path, Realm.defaultPath);
 
-        var newPath = TestUtil.realmPathForFile('default2.realm');
+        var newPath = TestCase.realmPathForFile('default2.realm');
         Realm.defaultPath = newPath;
         defaultRealm = new Realm({schema: []});
         TestCase.assertEqual(defaultRealm.path, newPath);

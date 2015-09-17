@@ -18,14 +18,12 @@
 
 'use strict';
 
-var TestUtil = {
+var TestCase = {
     realmPathForFile: function(str) {
         var path = Realm.defaultPath;
         return path.substring(0, path.lastIndexOf("/") + 1) + str;
     },
-};
 
-var TestCase = {
     assertEqual: function() {
         if (arguments[0] !== arguments[1]) {
             var message = "'" + arguments[0] + "' does not equal expected value '" + arguments[1] + "'";
@@ -82,4 +80,6 @@ var TestCase = {
             throw errorMessage;
         };
     },
-}
+};
+
+TestCase;
