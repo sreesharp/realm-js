@@ -21,6 +21,9 @@ private:
     static v8::Persistent<v8::Function> constructor;
 
     realm::Results m_results;
+
+    static void Get(uint32_t index, const v8::PropertyCallbackInfo<v8::Value>& info);
+    //void Set(uint32_t index, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<v8::Value>& info);
 };
 
 #endif

@@ -7,31 +7,33 @@ using namespace v8;
 
 Persistent<Function> RealmObject::constructor;
 
-RealmObject::RealmObject(realm::Object& target):
-        wrapped(target)
-{
+Local<ObjectTemplate> RealmObject::s_template;
+
+RealmObject::RealmObject(realm::Object *target) : m_object(target) {
 }
 
-RealmObject::~RealmObject() {}
+RealmObject::~RealmObject() {
+    delete m_object;
+}
 
 void RealmObject::Init(Handle<Object> exports) {
     Isolate* isolate = Isolate::GetCurrent();
 
-    Local<ObjectTemplate> result = ObjectTemplate::New(isolate);
-    result->SetInternalFieldCount(0);
-    result->SetNamedPropertyHandler(RealmObject::Get, RealmObject::Set);
+    s_template = ObjectTemplate::New(isolate);
+    //s_template->SetClassName(String::NewFromUtf8(isolate, "RealmObject"));
+    s_template->SetInternalFieldCount(1);
+
+    s_template->SetNamedPropertyHandler(RealmObject::Get, RealmObject::Set);
+
+    //constructor.Reset(isolate, s_template->GetFunction());
+    //exports->Set(String::NewFromUtf8(isolate, "RealmResults"), s_template->GetFunction());
 }
 
-void RealmObject::New(const FunctionCallbackInfo<Value>& args) {
+Local<Object> RealmObject::Create(realm::Object *target) {
     Isolate* isolate = Isolate::GetCurrent();
-    HandleScope scope(isolate);
-
-    if (args.IsConstructCall()) {
-        // Invoked as constructor: `new RealmObject(...)`
-        args.GetReturnValue().Set(args.This());
-    } else {
-        // TODO: Invoked as plain function `RealmObject(...)`, turn into construct call.
-    }
+    Local<Object> obj = s_template->NewInstance();
+    obj->SetInternalField(0, External::New(isolate, new RealmObject(target)));
+    return obj;
 }
 
 void RealmObject::Get(v8::Local<v8::String> name,
@@ -48,7 +50,15 @@ void RealmObject::Set(Local<String> name, v8::Local<v8::Value> value,
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
 
-    RealmObject* obj = ObjectWrap::Unwrap<RealmObject>(info.This());
     std::string key = *(String::Utf8Value(name));
-    obj->wrapped.set_property_value(nullptr, key, info.Data(), true);
+
+    Local<Object> self = info.Holder();
+    Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
+    RealmObject *obj = static_cast<RealmObject *>(wrap->Value());
+    obj->m_object->set_property_value(nullptr, key, info.Data(), true);
+
+    //    RealmObject* obj = ObjectWrap::Unwrap<RealmObject>(info.This());
+
 }
+
+

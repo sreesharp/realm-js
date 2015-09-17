@@ -1,10 +1,12 @@
 #include <node.h>
 
 #include "realmresults.h"
+#include "realmobject.h"
 #include "realmutils.hpp"
 
+#include "object_accessor.hpp"
+
 using namespace v8;
-using namespace realm;
 
 Persistent<Function> RealmResults::constructor;
 
@@ -28,6 +30,17 @@ void RealmResults::Init(Handle<Object> exports) {
 }
 
 
+void RealmResults::Get(uint32_t index, const v8::PropertyCallbackInfo<v8::Value>& info) {
+    Isolate* isolate = Isolate::GetCurrent();
+    RealmResults *results = ObjectWrap::Unwrap<RealmResults>(info.This());
+
+    EscapableHandleScope handle_scope(isolate);
+
+    realm::Object *obj =  new realm::Object(results->m_results.realm, results->m_results.object_schema, results->m_results.get(index));
+    info.GetReturnValue().Set(RealmObject::Create(obj));
+}
+
+
 void RealmResults::New(const FunctionCallbackInfo<Value>& args) {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
@@ -38,6 +51,9 @@ void RealmResults::New(const FunctionCallbackInfo<Value>& args) {
     } else {
         // TODO: Invoked as plain function `RealmResults(...)`, turn into construct call.
     }
+
+    Local<ObjectTemplate> result = ObjectTemplate::New(isolate);
+    result->SetIndexedPropertyHandler(RealmResults::Get);
 
 }
 
@@ -52,7 +68,7 @@ void RealmResults::SortByProperty(const v8::FunctionCallbackInfo<v8::Value>& arg
     }
 
     std::string propName = ToString(args[0]);
-    Property *prop = results->m_results.object_schema.property_for_name(propName);
+    realm::Property *prop = results->m_results.object_schema.property_for_name(propName);
     if (!prop) {
         makeError(isolate, "Property '" + propName + "' does not exist on object type '" + 
             results->m_results.object_schema.name + "'");
@@ -64,6 +80,6 @@ void RealmResults::SortByProperty(const v8::FunctionCallbackInfo<v8::Value>& arg
         ascending = *args[1]->ToBoolean();
     }
 
-    SortOrder sort = {{prop->table_column}, {ascending}};
+    realm::SortOrder sort = {{prop->table_column}, {ascending}};
     results->m_results.setSort(sort);
 }

@@ -183,7 +183,9 @@ void RealmIO::Create(const v8::FunctionCallbackInfo<v8::Value>& args) {
             update = ValidatedValueToBool(args[2]);
         }
 
-
+        realm::Object obj = realm::Object::create<Local<Value>>(nullptr, sharedRealm, *object_schema,
+             object, update);
+        args.GetReturnValue().Set(RealmObject::Create(new realm::Object(obj)));
 
     } catch (std::exception &ex) {
         makeError(isolate, ex);
