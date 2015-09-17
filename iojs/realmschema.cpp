@@ -2,6 +2,7 @@
 #include "realmschema.hpp"
 
 using namespace v8;
+using namespace realm;
 
 RealmSchema::RealmSchema() {}
 
@@ -42,70 +43,77 @@ Local<Value> RealmSchema::PrototypeForClassName(const std::string &className) {
     return s_prototypes[className];
 }
 
-size_t ValidatedArrayLength(Value &value) {
-    if (!value.IsArray()) {
+size_t ValidatedArrayLength(Value *value) {
+    if (!value->IsArray()) {
         throw std::runtime_error("value is not an array");
     }
-    Array *array = Array::Cast(&value);
+    v8::Array *array = v8::Array::Cast(value);
     return array->Length();
 }
 
-realm::objectSchema ParseObjectSchema(Local<Object> jsonObjectSchema) {
-    Local<Object> prototypeObject = NULL;
-    Local<Value> prototypeValue = jsonObjectSchema.Get("prototype");
-    if (!prototypeValue.IsUndefined()) {
-        prototypeObject = prototypeValue.ToObject();
-        objectSchemaObject = prototypeObject.Get("schema");
+realm::Property ParseProperty(Local<Object> jsonProperty) {
+    realm::Property property;
+
+    return property;
+}
+
+realm::ObjectSchema ParseObjectSchema(Local<Object> jsonObjectSchema) {
+    Isolate *iso = Isolate::GetCurrent();
+
+    Local<Object> prototypeObject;
+    Local<Object> objectSchemaObject;
+
+    Local<Value> prototypeValue = jsonObjectSchema->Get(String::NewFromUtf8(iso, "prototype"));
+    if (!prototypeValue->IsUndefined()) {
+        prototypeObject = prototypeValue->ToObject();
+        objectSchemaObject = prototypeObject->Get(String::NewFromUtf8(iso, "schema"))->ToObject();
     }
     else {
-        objectSchemaObject = jsonObjectSchema.Get("schema");
+        objectSchemaObject = jsonObjectSchema->Get(String::NewFromUtf8(iso, "schema"))->ToObject();
     }
-    Local<Value> propertiesObject = objectSchemaObject.Get("properties").ToObject();
+    Local<Value> propertiesObject = objectSchemaObject->Get(String::NewFromUtf8(iso, "properties"));
 
     ObjectSchema objectSchema;
     ObjectDefaults defaults;
-    objectSchema.name = objectSchemaObject.Get("name").ToString();
+    objectSchema.name = *(String::Utf8Value(objectSchemaObject->Get(String::NewFromUtf8(iso, "name"))->ToString()));
 
-    size_t numProperties = ValidatedArrayLength(propertiesObject);
-    Array *properties = Array::Cast(&propertiesObject);
+    size_t numProperties = ValidatedArrayLength(*propertiesObject);
+    v8::Array *properties = v8::Array::Cast(*propertiesObject);
     for (unsigned int p = 0; p < numProperties; p++) {
-        Local<Object> property = properties.CloneElementAt(i);
+        Local<Object> property = properties->CloneElementAt(p);
         objectSchema.properties.emplace_back(ParseProperty(property));
-/*
-        static JSStringRef defaultString = JSStringCreateWithUTF8CString("default");
-        JSValueRef defaultValue = JSObjectGetProperty(ctx, property, defaultString, NULL);
-        if (!JSValueIsUndefined(ctx, defaultValue)) {
-            JSValueProtect(ctx, defaultValue);
-            defaults.emplace(objectSchema.properties.back().name, defaultValue);
-        }*/
-    }
-/*    s_defaults.emplace(objectSchema.name, std::move(defaults));
 
-    static JSStringRef primaryString = JSStringCreateWithUTF8CString("primaryKey");
-    JSValueRef primaryValue = RJSValidatedPropertyValue(ctx, objectSchemaObject, primaryString);
-    if (!JSValueIsUndefined(ctx, primaryValue)) {
-        objectSchema.primary_key = RJSValidatedStringForValue(ctx, primaryValue);
+        Local<Value> defaultValue = property->Get(String::NewFromUtf8(iso, "default"));
+        if (!defaultValue->IsUndefined()) {
+            defaults.emplace(objectSchema.properties.back().name, defaultValue);
+        }
+    }
+    s_defaults.emplace(objectSchema.name, std::move(defaults));
+
+    Local<Value> primaryValue = objectSchemaObject->Get(String::NewFromUtf8(iso, "primaryKey"));
+    if (!primaryValue->IsUndefined()) {
+        objectSchema.primary_key = *(String::Utf8Value(primaryValue->ToString()));
         Property *property = objectSchema.primary_key_property();
         if (!property) {
             throw std::runtime_error("Missing primary key property '" + objectSchema.primary_key + "'");
         }
         property->is_primary = true;
-    }*/
+    }
 
     // store prototype
-    if (prototypeObject) {
+    if (*prototypeObject) {
         s_prototypes[objectSchema.name] = std::move(prototypeObject);
     }
     
     return objectSchema;
 }
 
-realm::Schema RealmSchema::ParseSchema(Value &value) {
+realm::Schema RealmSchema::ParseSchema(Value *value) {
     std::vector<realm::ObjectSchema> schema;
     size_t length = ValidatedArrayLength(value);
-    Array *array = Array::Cast(&value);
+    v8::Array *array = v8::Array::Cast(value);
     for (unsigned int i = 0; i < length; i++) {
-        Local<Object> jsonObjectSchema = array.CloneElementAt(i);
+        Local<Object> jsonObjectSchema = array->CloneElementAt(i);
         ObjectSchema objectSchema = ParseObjectSchema(jsonObjectSchema);
         schema.emplace_back(std::move(objectSchema));
     }

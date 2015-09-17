@@ -10,7 +10,7 @@
 
 namespace realm {
     class Schema;
-    using ObjectDefaults = std::map<std::string, JSValueRef>;
+    using ObjectDefaults = std::map<std::string, v8::Handle<v8::Value>>;
 }
 
 
@@ -24,8 +24,8 @@ public:
     // Methods
 
     // Util
-    static realm::Schema ParseSchema(v8::Value &value);
-    static Local<Value> PrototypeForClassName(const std::string &className);
+    static realm::Schema ParseSchema(v8::Value *value);
+    static v8::Local<v8::Value> PrototypeForClassName(const std::string &className);
     static realm::ObjectDefaults &DefaultsForClassName(const std::string &className);
 
 private:
