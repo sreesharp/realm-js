@@ -267,3 +267,4 @@ var RealmTests = {
     },
 };
 
+RealmTests;

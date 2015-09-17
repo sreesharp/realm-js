@@ -99,4 +99,6 @@ var ResultsTests = {
         TestCase.assertEqual(objects[3].doubleCol, 1);
         TestCase.assertEqual(objects[4].doubleCol, 0);
     },
-}
+};
+
+ResultsTests;

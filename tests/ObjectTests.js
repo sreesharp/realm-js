@@ -122,3 +122,5 @@ var ObjectTests = {
         TestCase.assertEqual(obj.arrayCol[2].doubleCol, 2);
     },
 };
+
+ObjectTests;
