@@ -8,7 +8,7 @@
 		"../src/object-store/object_store.cpp",
 		"../src/object-store/results.cpp",
 		"../src/object-store/shared_realm.cpp",
-    "realm.cc"
+    "iorealm.cc"
       ],
       "include_dirs": [ "../core/include" ],
       "xcode_settings" : {
