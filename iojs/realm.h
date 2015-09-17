@@ -11,6 +11,13 @@ public:
     static void Init(v8::Handle<v8::Object> exports);
     static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
 
+    // Methods
+    static void Objects(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void Create(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void Delete(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void DeleteAll(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void Write(const v8::FunctionCallbackInfo<v8::Value>& args);
+
 private:
     ~Realm();
 

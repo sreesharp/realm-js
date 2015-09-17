@@ -11,6 +11,9 @@ public:
     static void Init(v8::Handle<v8::Object> exports);
     static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
 
+    // Methods
+    static void SortByProperty(const v8::FunctionCallbackInfo<v8::Value>& args);
+
 private:
     ~RealmResults();
 
