@@ -17,7 +17,8 @@
         "realmobject.cc",
         "realmresults.cc",
         "realmarray.cc",
-        "realmschema.cc"
+        "realmschema.cc",
+        "realmutils.cpp"
       ],
       "include_dirs": [ "../core/include", "../src/object-store", "../src/object-store/apple" ],
       "cflags_cc": [ '-DREALM_ENABLE_REPLICATION', '-fexceptions', '-frtti', '-std=c++14' ],

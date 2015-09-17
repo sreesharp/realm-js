@@ -4,6 +4,7 @@
 
 #include "realm.h"
 #include "realmschema.hpp"
+#include "realmutils.hpp"
 
 #import "shared_realm.hpp"
 #import "object_accessor.hpp"
@@ -125,7 +126,7 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
                     break;
                 }
             default:
-                iso->ThrowException(Exception::TypeError(String::NewFromUtf8(iso, "invalid arguments.")));
+                makeError(iso, "invalid arguments.");
             }
             RealmIO* r = new RealmIO();
             realm::SharedRealm realm = realm::Realm::get_shared_realm(config);
@@ -142,7 +143,7 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
             args.GetReturnValue().Set(args.This());
         }
         catch (std::exception &ex) {
-            iso->ThrowException(Exception::TypeError(String::NewFromUtf8(iso, ex.what())));
+            makeError(iso, ex);
             args.GetReturnValue().SetUndefined();
         }
     } else {

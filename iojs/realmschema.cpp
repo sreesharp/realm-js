@@ -1,5 +1,6 @@
 
 #include "realmschema.hpp"
+#include "realmutils.hpp"
 
 using namespace v8;
 using namespace realm;
@@ -45,25 +46,6 @@ Local<Value> RealmSchema::PrototypeForClassName(const std::string &className) {
     return s_prototypes[className];
 }
 
-size_t ValidatedArrayLength(Value *value) {
-    if (!value->IsArray()) {
-        throw std::runtime_error("value is not an array");
-    }
-    v8::Array *array = v8::Array::Cast(value);
-    return array->Length();
-}
-
-std::string ToString(Local<v8::String> v8String) {
-    return *(String::Utf8Value(v8String));
-}
-
-std::string ToString(Local<v8::Value> v8Value) {
-    return *(String::Utf8Value(v8Value->ToString()));
-}
-
-Local<String> ToString(Isolate *iso, const char *string) {
-    return String::NewFromUtf8(iso, string);
-}
 
 realm::Property ParseProperty(Local<Object> jsonProperty) {
     Isolate *iso = Isolate::GetCurrent();
