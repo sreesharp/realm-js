@@ -9,7 +9,10 @@
 		    "../src/object-store/results.cpp",
 		    "../src/object-store/shared_realm.cpp",
         "iorealm.cc",
-        "realm.cc"
+        "realm.cc",
+        "realmobject.cc",
+        "realmresults.cc",
+        "realmarray.cc"
       ],
       "include_dirs": [ "../core/include" ],
       "xcode_settings" : {
