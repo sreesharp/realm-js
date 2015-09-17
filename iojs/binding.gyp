@@ -4,11 +4,12 @@
       "target_name": "Realm",
       "sources": [ 
         "../src/object-store/object_accessor.cpp",
-		"../src/object-store/object_schema.cpp",
-		"../src/object-store/object_store.cpp",
-		"../src/object-store/results.cpp",
-		"../src/object-store/shared_realm.cpp",
-    "iorealm.cc"
+		    "../src/object-store/object_schema.cpp",
+		    "../src/object-store/object_store.cpp",
+		    "../src/object-store/results.cpp",
+		    "../src/object-store/shared_realm.cpp",
+        "iorealm.cc",
+        "realm.cc"
       ],
       "include_dirs": [ "../core/include" ],
       "xcode_settings" : {
