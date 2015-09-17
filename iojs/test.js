@@ -20,7 +20,7 @@ evalFile(testPath + 'TestCase.js', function(err, data) {
 			global[name] = testObjects[name];
 		};
 
-		var testSuites = [ 'RealmTests.js'];
+		var testSuites = [ 'ObjectTests.js', 'RealmTests.js'];
 		for (var i = 0; i < testSuites.length; i++) {
 			evalFile(testPath + testSuites[i], function(err, suite) {
 			  	if (err) {

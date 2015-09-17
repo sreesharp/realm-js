@@ -45,7 +45,8 @@ namespace realm {
         PropertyTypeArray  = 13,
     };
 
-    struct Property {
+    class Property {
+      public:
         std::string name;
         PropertyType type;
         std::string object_type;

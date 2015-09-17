@@ -35,9 +35,9 @@ void RealmResults::Get(uint32_t index, const v8::PropertyCallbackInfo<v8::Value>
     RealmResults *results = ObjectWrap::Unwrap<RealmResults>(info.This());
 
     EscapableHandleScope handle_scope(isolate);
+
     realm::Object *obj =  new realm::Object(results->m_results.realm, results->m_results.object_schema, results->m_results.get(index));
-    Persistent<RealmObject> object(obj);
-    info.GetReturnValue().Set(object);
+    info.GetReturnValue().Set(RealmObject::Create(obj));
 }
 
 
@@ -77,7 +77,7 @@ void RealmResults::SortByProperty(const v8::FunctionCallbackInfo<v8::Value>& arg
     }
 
     std::string propName = ToString(args[0]);
-    Property *prop = results->m_results.object_schema.property_for_name(propName);
+    realm::Property *prop = results->m_results.object_schema.property_for_name(propName);
     if (!prop) {
         makeError(isolate, "Property '" + propName + "' does not exist on object type '" + 
             results->m_results.object_schema.name + "'");
@@ -89,6 +89,6 @@ void RealmResults::SortByProperty(const v8::FunctionCallbackInfo<v8::Value>& arg
         ascending = *args[1]->ToBoolean();
     }
 
-    SortOrder sort = {{prop->table_column}, {ascending}};
+    realm::SortOrder sort = {{prop->table_column}, {ascending}};
     results->m_results.setSort(sort);
 }

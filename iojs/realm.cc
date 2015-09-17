@@ -160,6 +160,7 @@ void RealmIO::Create(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
 
+    
 }
 
 void RealmIO::Delete(const v8::FunctionCallbackInfo<v8::Value>& args) {
