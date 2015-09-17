@@ -21,7 +21,9 @@
 #include "shared_realm.hpp"
 
 #include <assert.h>
-#include <sys/event.h>
+#ifdef REALM_APPLE_PLATFORM
+  #include <sys/event.h>
+#endif
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <system_error>
@@ -87,6 +89,7 @@ void ExternalCommitHelper::FdHolder::close()
 // source from the runloop and and shuts down.
 ExternalCommitHelper::ExternalCommitHelper(Realm* realm)
 {
+#ifdef REALM_APPLE_PLATFORM
     add_realm(realm);
 
     m_kq = kqueue();
@@ -94,6 +97,7 @@ ExternalCommitHelper::ExternalCommitHelper(Realm* realm)
         throw std::system_error(errno, std::system_category());
     }
 
+#endif
     auto path = realm->config().path + ".note";
 
     // Create and open the named pipe
@@ -165,6 +169,7 @@ ExternalCommitHelper::~ExternalCommitHelper()
 
 void ExternalCommitHelper::add_realm(realm::Realm* realm)
 {
+#ifdef REALM_APPLE_PLATFORM
     std::lock_guard<std::mutex> lock(m_realms_mutex);
 
     // Create the runloop source
@@ -180,10 +185,12 @@ void ExternalCommitHelper::add_realm(realm::Realm* realm)
     CFRunLoopAddSource(runloop, signal, kCFRunLoopDefaultMode);
 
     m_realms.push_back({realm, runloop, signal});
+#endif
 }
 
 void ExternalCommitHelper::remove_realm(realm::Realm* realm)
 {
+#ifdef REALM_APPLE_PLATFORM
     std::lock_guard<std::mutex> lock(m_realms_mutex);
     for (auto it = m_realms.begin(); it != m_realms.end(); ++it) {
         if (it->realm == realm) {
@@ -195,10 +202,12 @@ void ExternalCommitHelper::remove_realm(realm::Realm* realm)
         }
     }
     REALM_TERMINATE("Realm not registered");
+#endif
 }
 
 void ExternalCommitHelper::listen()
 {
+#ifdef REALM_APPLE_PLATFORM
     pthread_setname_np("RLMRealm notification listener");
 
 
@@ -241,6 +250,7 @@ void ExternalCommitHelper::listen()
             CFRunLoopWakeUp(realm.runloop);
         }
     }
+#endif
 }
 
 void ExternalCommitHelper::notify_others()
