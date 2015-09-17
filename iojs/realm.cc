@@ -66,6 +66,15 @@ void RealmIO::Init(Handle<Object> exports) {
     NODE_SET_PROTOTYPE_METHOD(tpl, "write",       RealmIO::Write);
     // FIXME: addNotification
 
+    // Realm.defaultPath
+    v8::Local<v8::String> constant_name = 
+        v8::String::NewFromUtf8(isolate, "defaultPath");
+    v8::Local<v8::String> constant_value = 
+        v8::String::NewFromUtf8(isolate, "./default.realm");   
+    v8::PropertyAttribute constant_attributes =
+        static_cast<v8::PropertyAttribute>(v8::DontDelete); 
+    tpl->Set(constant_name, constant_value, constant_attributes);
+
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "Realm"), tpl->GetFunction());
 }
@@ -109,6 +118,9 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
                     if (!path->IsUndefined()) {
                         config.path = *String::Utf8Value(path->ToString());
                     }
+                    else {
+                        config.path = writeablePathForFile("default.realm");
+                    }
 
                     break;
                 }
@@ -120,6 +132,11 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
             if (!realm->m_delegate) {
                 realm->m_delegate = std::make_unique<RJSRealmDelegate>();
             }
+
+            v8::Local<v8::String> prop_name = v8::String::NewFromUtf8(iso, "path");
+            v8::Local<v8::String> prop_value = v8::String::NewFromUtf8(iso, config.path.c_str());   
+            (*args.This())->Set(prop_name, prop_value);
+
             r->realm = realm;
             r->Wrap(args.This());
             args.GetReturnValue().Set(args.This());
