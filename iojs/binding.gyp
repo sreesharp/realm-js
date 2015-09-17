@@ -18,9 +18,10 @@
         "realmschema.cc"
       ],
       "include_dirs": [ "../core/include", "../src/object-store" ],
+      "cflags_cc": [ '-DREALM_ENABLE_REPLICATION', '-fexceptions', '-frtti', '-std=c++14' ],
+      "ldflags": [ '-L../core/', '-lrealm' ],
       "xcode_settings" : {
-        'OTHER_CFLAGS' : [ '-DREALM_ENABLE_REPLICATION', '-mmacosx-version-min=10.8', '-std=c++14', '-stdlib=libc++', '-fexceptions', '-frtti'],
-        'OTHER_LDFLAGS': [ '-L../core/', '-lrealm' ]
+        'OTHER_CFLAGS' : [ '-mmacosx-version-min=10.8', '-stdlib=libc++' ],
       },
     }
   ]
