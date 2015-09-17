@@ -9,12 +9,13 @@ public:
     RealmObject();
 
     static void Init(v8::Handle<v8::Object> exports);
-    static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static v8::Local<RealmObject> Create(realm::Object *target);
 
 private:
     ~RealmObject();
 
     static v8::Persistent<v8::Function> constructor;
+    realm::Object *m_object;
 };
 
 #endif

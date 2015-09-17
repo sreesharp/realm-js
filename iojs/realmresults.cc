@@ -35,10 +35,9 @@ void RealmResults::Get(uint32_t index, const v8::PropertyCallbackInfo<v8::Value>
     RealmResults *results = ObjectWrap::Unwrap<RealmResults>(info.This());
 
     EscapableHandleScope handle_scope(isolate);
-    Local<RealmObject> obj = RealmObject::New(isolate, 
-        realm::Object(results->m_results.realm, results->m_results.object_schema, results->m_results.get(index)));
-
-    info.GetReturnValue().Set(obj);
+    realm::Object *obj =  new realm::Object(results->m_results.realm, results->m_results.object_schema, results->m_results.get(index));
+    Persistent<RealmObject> object(obj);
+    info.GetReturnValue().Set(object);
 }
 
 
