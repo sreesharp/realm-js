@@ -22,7 +22,7 @@ public:
     // Methods
 
     // Util
-    static realm::Schema ParseSchema(v8::Value &value);
+    static realm::Schema ParseSchema(const v8::Local<v8::Value> &value);
 
 private:
     ~RealmSchema();

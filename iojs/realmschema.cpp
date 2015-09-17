@@ -7,6 +7,8 @@ RealmSchema::RealmSchema() {}
 
 RealmSchema::~RealmSchema() {}
 
+Persistent<Function> RealmSchema::constructor;
+
 void RealmSchema::Init(Handle<Object> exports) {
     Isolate* isolate = Isolate::GetCurrent();
 
@@ -32,6 +34,6 @@ void RealmSchema::New(const FunctionCallbackInfo<Value>& args) {
     }
 }
 
-realm::Schema RealmSchema::ParseSchema(v8::Value &value) {
+realm::Schema RealmSchema::ParseSchema(const v8::Local<v8::Value> &value) {
     return realm::Schema(std::vector<realm::ObjectSchema>());
 }

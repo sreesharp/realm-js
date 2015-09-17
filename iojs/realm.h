@@ -4,9 +4,11 @@
 #include <node.h>
 #include <node_object_wrap.h>
 
-class Realm : public node::ObjectWrap {
+#include "shared_realm.hpp"
+
+class RealmIO : public node::ObjectWrap {
 public:
-    Realm();
+    RealmIO();
 
     static void Init(v8::Handle<v8::Object> exports);
     static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
@@ -19,9 +21,12 @@ public:
     static void Write(const v8::FunctionCallbackInfo<v8::Value>& args);
 
 private:
-    ~Realm();
+    ~RealmIO();
 
     static v8::Persistent<v8::Function> constructor;
+
+    realm::SharedRealm realm;
+
 };
 
 #endif
