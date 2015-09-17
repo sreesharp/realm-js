@@ -53,10 +53,61 @@ size_t ValidatedArrayLength(Value *value) {
     return array->Length();
 }
 
-realm::Property ParseProperty(Local<Object> jsonProperty) {
-    realm::Property property;
+std::string ToString(Local<v8::String> v8String) {
+    return *(String::Utf8Value(v8String));
+}
 
-    return property;
+std::string ToString(Local<v8::Value> v8Value) {
+    return *(String::Utf8Value(v8Value->ToString()));
+}
+
+Local<String> ToString(Isolate *iso, const char *string) {
+    return String::NewFromUtf8(iso, string);
+}
+
+realm::Property ParseProperty(Local<Object> jsonProperty) {
+    Isolate *iso = Isolate::GetCurrent();
+    realm::Property prop;
+
+    prop.name = ToString(jsonProperty->Get(ToString(iso, "name")));
+    std::string type = ToString(jsonProperty->Get(ToString(iso, "type")));
+
+    if (type == "RealmTypeBool") {
+        prop.type = PropertyTypeBool;
+    }
+    else if (type == "RealmTypeInt") {
+        prop.type = PropertyTypeInt;
+    }
+    else if (type == "RealmTypeFloat") {
+        prop.type = PropertyTypeFloat;
+    }
+    else if (type == "RealmTypeDouble") {
+        prop.type = PropertyTypeDouble;
+    }
+    else if (type == "RealmTypeString") {
+        prop.type = PropertyTypeString;
+    }
+    else if (type == "RealmTypeDate") {
+        prop.type = PropertyTypeDate;
+    }
+    else if (type == "RealmTypeData") {
+        prop.type = PropertyTypeData;
+    }
+    else if (type == "RealmTypeObject") {
+        prop.type = PropertyTypeObject;
+        prop.object_type =  ToString(jsonProperty->Get(ToString(iso, "objectType")));
+        prop.is_nullable = true;
+    }
+    else if (type == "RealmTypeArray") {
+        prop.type = PropertyTypeArray;
+        prop.object_type = ToString(jsonProperty->Get(ToString(iso, "objectType")));
+    }
+    else {
+        prop.type = PropertyTypeObject;
+        prop.object_type = type;
+        prop.is_nullable = true;
+    }
+    return prop;
 }
 
 realm::ObjectSchema ParseObjectSchema(Local<Object> jsonObjectSchema) {
