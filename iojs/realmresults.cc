@@ -1,10 +1,12 @@
 #include <node.h>
 
 #include "realmresults.h"
+#include "realmobject.h"
 #include "realmutils.hpp"
 
+#include "object_accessor.hpp"
+
 using namespace v8;
-using namespace realm;
 
 Persistent<Function> RealmResults::constructor;
 
@@ -28,6 +30,18 @@ void RealmResults::Init(Handle<Object> exports) {
 }
 
 
+void RealmResults::Get(uint32_t index, const v8::PropertyCallbackInfo<v8::Value>& info) {
+    Isolate* isolate = Isolate::GetCurrent();
+    RealmResults *results = ObjectWrap::Unwrap<RealmResults>(info.This());
+
+    EscapableHandleScope handle_scope(isolate);
+    Local<RealmObject> obj = RealmObject::New(isolate, 
+        realm::Object(results->m_results.realm, results->m_results.object_schema, results->m_results.get(index)));
+
+    info.GetReturnValue().Set(obj);
+}
+
+
 void RealmResults::New(const FunctionCallbackInfo<Value>& args) {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
@@ -39,7 +53,11 @@ void RealmResults::New(const FunctionCallbackInfo<Value>& args) {
         // TODO: Invoked as plain function `RealmResults(...)`, turn into construct call.
     }
 
+    Local<ObjectTemplate> result = ObjectTemplate::New(isolate);
+    result->SetIndexedPropertyHandler(RealmResults::Get);
+
 }
+
 bool ValidateArgumentRange(size_t count, size_t min, size_t max) {
     if (count < min || count > max)
     {

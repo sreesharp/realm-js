@@ -154,7 +154,6 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
 void RealmIO::Objects(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
-
 }
 
 void RealmIO::Create(const v8::FunctionCallbackInfo<v8::Value>& args) {
