@@ -95,7 +95,7 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
                     break;
                 }
                 if (args[0]->IsObject()) {
-                    config.schema = std::make_unique<realm::Schema>(RealmSchema::ParseSchema(args[0]));
+                    config.schema = std::make_unique<realm::Schema>(RealmSchema::ParseSchema(*args[0]));
                     break;
                 }
                 if (args[0]->IsNumber()) {
