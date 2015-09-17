@@ -77,8 +77,8 @@ std::string writeablePathForFile(const std::string &fileName) {
 
 
 void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
-    Isolate* isolate = Isolate::GetCurrent();
-    HandleScope scope(isolate);
+    Isolate* iso = Isolate::GetCurrent();
+    HandleScope scope(iso);
 
     if (args.IsConstructCall()) {
         // Invoked as constructor: `new Realm(...)`
@@ -92,18 +92,28 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
                 if (args[0]->IsStringObject()) {
                     v8::String::Utf8Value s(args[0]->ToString());
                     config.path = std::string(*s);
-                    break;
                 }
-                if (args[0]->IsObject()) {
-                    config.schema = std::make_unique<realm::Schema>(RealmSchema::ParseSchema(*args[0]));
-                    break;
-                }
-                if (args[0]->IsNumber()) {
-                    config.schema_version = args[0]->IntegerValue();
+                else if (args[0]->IsObject()) {
+                    Local<Object> configValue = args[0]->ToObject();
+                    Local<Value> version = configValue->Get(String::NewFromUtf8(iso, "schemaVersion"));
+                    if (!version->IsUndefined()) {
+                        config.schema_version = configValue->Get(String::NewFromUtf8(iso, "prototype"))->IntegerValue();
+                    }
+
+                    Local<Value> schema = configValue->Get(String::NewFromUtf8(iso, "schema"));
+                    if (!schema->IsUndefined()) {
+                        config.schema = std::make_unique<realm::Schema>(RealmSchema::ParseSchema(*schema));
+                    }
+
+                    Local<Value> path = configValue->Get(String::NewFromUtf8(iso, "path"));
+                    if (!path->IsUndefined()) {
+                        config.path = *String::Utf8Value(path->ToString());
+                    }
+
                     break;
                 }
             default:
-                return;
+                iso->ThrowException(Exception::TypeError(String::NewFromUtf8(iso, "invalid arguments.")));
             }
             RealmIO* r = new RealmIO();
             realm::SharedRealm realm = realm::Realm::get_shared_realm(config);
@@ -115,7 +125,7 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
             args.GetReturnValue().Set(args.This());
         }
         catch (std::exception &ex) {
-            isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, ex.what())));
+            iso->ThrowException(Exception::TypeError(String::NewFromUtf8(iso, ex.what())));
             args.GetReturnValue().SetUndefined();
         }
     } else {
