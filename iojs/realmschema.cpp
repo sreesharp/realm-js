@@ -71,7 +71,7 @@ realm::ObjectSchema ParseObjectSchema(Local<Object> jsonObjectSchema) {
         objectSchemaObject = prototypeObject->Get(String::NewFromUtf8(iso, "schema"))->ToObject();
     }
     else {
-        objectSchemaObject = jsonObjectSchema->Get(String::NewFromUtf8(iso, "schema"))->ToObject();
+        objectSchemaObject = jsonObjectSchema->ToObject();
     }
     Local<Value> propertiesObject = objectSchemaObject->Get(String::NewFromUtf8(iso, "properties"));
 

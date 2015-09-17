@@ -292,6 +292,23 @@
 		};
 /* End PBXHeadersBuildPhase section */
 
+/* Begin PBXLegacyTarget section */
+		029DD9D31BAAF047005AB490 /* node */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "configure build";
+			buildConfigurationList = 029DD9D41BAAF047005AB490 /* Build configuration list for PBXLegacyTarget "node" */;
+			buildPhases = (
+			);
+			buildToolPath = "/usr/local/bin/node-gyp";
+			buildWorkingDirectory = "/Users/ari/Src/Realm/realm-js/iojs";
+			dependencies = (
+			);
+			name = node;
+			passBuildSettingsInEnvironment = 1;
+			productName = node;
+		};
+/* End PBXLegacyTarget section */
+
 /* Begin PBXNativeTarget section */
 		02B29A151B7CF7C9008A7E6B /* RealmReact */ = {
 			isa = PBXNativeTarget;
@@ -357,6 +374,9 @@
 				LastUpgradeCheck = 0630;
 				ORGANIZATIONNAME = Realm;
 				TargetAttributes = {
+					029DD9D31BAAF047005AB490 = {
+						CreatedOnToolsVersion = 7.0;
+					};
 					02B29A151B7CF7C9008A7E6B = {
 						CreatedOnToolsVersion = 6.4;
 					};
@@ -383,6 +403,7 @@
 				02B58CB01AE99CEC009B348C /* RealmJS */,
 				02B58CBB1AE99CEC009B348C /* RealmJSTests */,
 				02B29A151B7CF7C9008A7E6B /* RealmReact */,
+				029DD9D31BAAF047005AB490 /* node */,
 			);
 		};
 /* End PBXProject section */
@@ -483,6 +504,44 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		029DD9D51BAAF047005AB490 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUGGING_SYMBOLS = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		029DD9D61BAAF047005AB490 /* GCov_Build */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = GCov_Build;
+		};
+		029DD9D71BAAF047005AB490 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		02B29A281B7CF7C9008A7E6B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -838,6 +897,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		029DD9D41BAAF047005AB490 /* Build configuration list for PBXLegacyTarget "node" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				029DD9D51BAAF047005AB490 /* Debug */,
+				029DD9D61BAAF047005AB490 /* GCov_Build */,
+				029DD9D71BAAF047005AB490 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		02B29A271B7CF7C9008A7E6B /* Build configuration list for PBXNativeTarget "RealmReact" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
