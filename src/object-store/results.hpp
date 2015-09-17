@@ -19,8 +19,8 @@
 #ifndef REALM_RESULTS_HPP
 #define REALM_RESULTS_HPP
 
-#import "shared_realm.hpp"
-#import <realm/table_view.hpp>
+#include "shared_realm.hpp"
+#include <realm/table_view.hpp>
 
 namespace realm {
     struct SortOrder {
