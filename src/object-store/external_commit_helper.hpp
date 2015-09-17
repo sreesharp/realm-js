@@ -19,7 +19,14 @@
 #ifndef REALM_EXTERNAL_COMMIT_HELPER_HPP
 #define REALM_EXTERNAL_COMMIT_HELPER_HPP
 
-#include <CoreFoundation/CFRunLoop.h>
+#if defined(__APPLE__) && defined(__MACH__)
+  #define REALM_APPLE_PLATFORM
+#endif
+
+#ifdef REALM_APPLE_PLATFORM
+  #include <CoreFoundation/CFRunLoop.h>
+#endif
+
 #include <mutex>
 #include <vector>
 
@@ -60,8 +67,10 @@ private:
 
     struct PerRealmInfo {
         Realm* realm;
+#ifdef REALM_APPLE_PLATFORM
         CFRunLoopRef runloop;
         CFRunLoopSourceRef signal;
+#endif
     };
 
     void listen();
