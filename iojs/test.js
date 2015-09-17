@@ -15,7 +15,21 @@ for (var i = 0; i < testSuites.length; i++) {
 	  	}
 
 	  	var suite = eval(data);	
-		console.log(suite);
+	  	for (var test in suite) {
+	  		var caught;
+	  		try {
+	  			suite.test();
+	  		}
+	  		catch(exception) {
+            	caught = exception;
+        	}
+        	if (caught != undefined) {
+        		console.log("PASSED - " + test);
+        	}
+        	else {
+        		console.log("FAILED - " + test + " - " + exception);
+        	}
+	  	};
 	});
 }
 
