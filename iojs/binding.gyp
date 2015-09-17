@@ -12,6 +12,7 @@
       "include_dirs": [ "../core/include" ],
       "xcode_settings" : {
         'OTHER_CFLAGS' : [ '-DREALM_ENABLE_REPLICATION', '-mmacosx-version-min=10.8', '-std=c++14', '-stdlib=libc++', '-fexceptions', '-frtti' ],
+        'OTHER_LDFLAGS': [ '-L../core/', '-lrealm' ]
       },
     }
   ]
