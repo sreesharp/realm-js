@@ -11,7 +11,7 @@
 		    "../src/object-store/schema.cpp",
 		    "../src/object-store/transact_log_handler.cpp",
         "../src/object-store/shared_realm.cpp",
-        "../src/object-store/apple/external_commit_helper.cpp",
+        "../src/object-store/external_commit_helper.cpp",
         "iorealm.cc",
         "realm.cc",
         "realmobject.cc",
@@ -20,8 +20,8 @@
         "realmschema.cc",
         "realmutils.cpp"
       ],
-      "include_dirs": [ "../core/include", "../src/object-store", "../src/object-store/apple" ],
-      "cflags_cc": [ '-DREALM_ENABLE_REPLICATION', '-fexceptions', '-frtti', '-std=c++14' ],
+      "include_dirs": [ "../core/include", "../src/object-store" ],
+      "cflags_cc": [ '-DREALM_ENABLE_REPLICATION', '-fexceptions', '-frtti', '-std=c++14', '-g', '-O0' ],
       "ldflags": [ '-L../core/', '-lrealm' ],
       "xcode_settings" : {
         'OTHER_CFLAGS' : [ '-mmacosx-version-min=10.8', '-DREALM_ENABLE_REPLICATION', '-fexceptions', '-frtti', '-std=c++14', '-stdlib=libc++', '-g', '-O0' ],
