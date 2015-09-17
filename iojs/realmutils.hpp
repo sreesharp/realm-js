@@ -12,6 +12,6 @@ std::size_t ValidatedArrayLength(v8::Value *);
 std::string ToString(v8::Local<v8::String>);
 std::string ToString(v8::Local<v8::Value>);
 v8::Local<v8::String> ToString(v8::Isolate *, const char *);
-bool oneFunctionArgument(const v8::FunctionCallbackInfo<v8::Value>);
+bool oneFunctionArgument(v8::Isolate *, const v8::FunctionCallbackInfo<v8::Value>&);
 
 #endif

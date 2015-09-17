@@ -32,3 +32,16 @@ std::string ToString(v8::Local<v8::Value> v8Value) {
 v8::Local<v8::String> ToString(v8::Isolate *iso, const char *string) {
     return v8::String::NewFromUtf8(iso, string);
 }
+
+bool oneFunctionArgument(v8::Isolate *iso, const v8::FunctionCallbackInfo<v8::Value>& args) {
+    if (args.Length() == 1) {
+        if (args[0]->IsFunction()) {
+            return true;
+        }
+        makeError(iso, "Function expected.");
+    }
+    else {
+        makeError(iso, "One argument expected.");
+    }
+    return false;
+}

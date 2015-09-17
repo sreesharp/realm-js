@@ -166,7 +166,7 @@ void RealmIO::Create(const v8::FunctionCallbackInfo<v8::Value>& args) {
 void RealmIO::Delete(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
-
+    
 }
 
 void RealmIO::DeleteAll(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -179,4 +179,19 @@ void RealmIO::Write(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
 
+    if (oneFunctionArgument(isolate, args)) {
+        Local<Function> fun = Local<Function>::Cast(args[0]);
+        RealmIO *realm = ObjectWrap::Unwrap<RealmIO>(args.This());
+        TryCatch trycatch;
+        realm->realm->begin_transaction();
+        fun->Call(v8::Context::New(isolate)->Global(), 0, NULL);
+        if (trycatch.HasCaught()) {
+            realm->realm->cancel_transaction();
+            trycatch.ReThrow();
+        }
+        else {
+            realm->realm->commit_transaction();
+        }
+    }
+    args.GetReturnValue().SetUndefined(); 
 }
