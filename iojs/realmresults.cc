@@ -40,14 +40,6 @@ void RealmResults::New(const FunctionCallbackInfo<Value>& args) {
     }
 
 }
-bool ValidateArgumentRange(size_t count, size_t min, size_t max) {
-    if (count < min || count > max)
-    {
-        makeError(Isolate::GetCurrent(), "argument count must be between " + std::to_string(min) + " and " + std::to_string(max));
-        return false;
-    }
-    return true;
-}
 
 void RealmResults::SortByProperty(const v8::FunctionCallbackInfo<v8::Value>& args) {
     RealmResults *results = ObjectWrap::Unwrap<RealmResults>(args.This());

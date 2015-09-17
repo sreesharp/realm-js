@@ -5,6 +5,7 @@
 #include "realm.h"
 #include "realmschema.hpp"
 #include "realmutils.hpp"
+#include "realmobject.h"
 
 #import "shared_realm.hpp"
 #import "object_accessor.hpp"
@@ -161,18 +162,91 @@ void RealmIO::Create(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
 
+    try {
+        ValidateArgumentRange(args.Length(), 2, 3);
+        std::string className = ValidatedStringForValue(args[0], "objectType");
+        RealmIO *realm = ObjectWrap::Unwrap<RealmIO>(args.This());
+        realm::SharedRealm sharedRealm = realm->realm;
+        auto object_schema = sharedRealm->config().schema->find(className);
+        if (object_schema == sharedRealm->config().schema->end()) {
+            makeError(isolate, "Object type '" + className + "' not found in schema.");
+            args.GetReturnValue().SetUndefined();
+            return;
+        }
+        Local<Object> object = ValidatedValueToObject(args[1]);
+        if (args[1]->IsArray()) {
+            object = DictForPropertyArray(isolate, *object_schema, v8::Local<v8::Array>::Cast(args[1]));
+        }
+
+        bool update = false;
+        if (args.Length() == 3) {
+            update = ValidatedValueToBool(args[2]);
+        }
+
+
+
+    } catch (std::exception &ex) {
+        makeError(isolate, ex);
+        args.GetReturnValue().SetUndefined();
+    }
 }
+
 
 void RealmIO::Delete(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
-    
+
+   /* try {
+        if (oneArgument(isolate, args)) {
+
+            RealmIO *realm = ObjectWrap::Unwrap<RealmIO>(args.This());
+            realm::SharedRealm r = realm->realm;
+            
+            if (r->is_in_transaction()) {
+                throw std::runtime_error("Can only delete objects within a transaction.");
+            }
+
+            if (args[0]->IsArray()) { // FIXME: add RealmArray and RealmResults
+                v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(args[0]);
+                size_t length = array->Length();
+                for (long i = length-1; i >= 0; i--) {
+                    v8::Local<v8::Object> object = array->Get(i);
+                    realm::Object r_object = ObjectWrap::Unwrap<RealmObject>(object)->wrapped;
+                    realm::TableRef table = realm::ObjectStore::table_for_object_type(r->read_group(), r_object.object_schema.name);
+                    table->move_last_over(r_object.row.get_index());
+                }
+            }
+            else {
+                realm::Object object = ObjectWrap::Unwrap<RealmObject>(args[0])->wrapped;
+                realm::TableRef table = realm::ObjectStore::table_for_object_type(r->read_group(), object.object_schema.name);
+                table->move_last_over(object.row.get_index());
+            }
+        }
+    } catch (std::exception &ex) {
+        makeError(isolate, ex);
+    }
+    args.GetReturnValue().SetUndefined();*/
 }
 
 void RealmIO::DeleteAll(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
 
+    try {
+        if (noArgument(isolate, args)) {
+            RealmIO *realm = ObjectWrap::Unwrap<RealmIO>(args.This());
+            realm::SharedRealm r = realm->realm;
+            if (r->is_in_transaction()) {
+                throw std::runtime_error("Can only delete objects within a transaction.");
+            }
+            for (auto objectSchema : *r->config().schema) {
+                realm::ObjectStore::table_for_object_type(r->read_group(), objectSchema.name)->clear();
+            }
+        } 
+    } catch (std::exception &ex) {
+        makeError(isolate, ex);
+    }
+    args.GetReturnValue().SetUndefined();
 }
 
 void RealmIO::Write(const v8::FunctionCallbackInfo<v8::Value>& args) {
