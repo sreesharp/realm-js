@@ -51,6 +51,10 @@ realm::Object *RealmObject::GetObject(Local<Object> self) {
     return static_cast<RealmObject *>(wrap->Value())->m_object;
 }
 
+using NullType = std::nullptr_t;
+using ValueType = Local<Value>;
+using Accessor = realm::NativeAccessor<ValueType, NullType>;
+
 void RealmObject::Set(Local<String> name, v8::Local<v8::Value> value,
         const PropertyCallbackInfo<Value>& info)
 {
@@ -58,14 +62,10 @@ void RealmObject::Set(Local<String> name, v8::Local<v8::Value> value,
     HandleScope scope(isolate);
 
     std::string key = *(String::Utf8Value(name));
-    GetObject(info.Holder())->set_property_value(nullptr, key, info.Data(), true);
+    GetObject(info.Holder())->set_property_value<ValueType, NullType>(nullptr, key, value, true);
 
     //    RealmObject* obj = ObjectWrap::Unwrap<RealmObject>(info.This());
 }
-
-using NullType = void *;
-using ValueType = Local<Value>;
-using Accessor = realm::NativeAccessor<ValueType, NullType>;
 
 template<> bool Accessor::dict_has_value_for_key(NullType ctx, ValueType dict, const std::string &prop_name) {
     return dict->ToObject()->Has(ToString(Isolate::GetCurrent(), prop_name.c_str()));
@@ -113,7 +113,6 @@ template<> realm::DateTime Accessor::to_datetime(NullType ctx, ValueType &val) {
     return 0; // FIXME
 }
 
-
 template<> size_t Accessor::to_object_index(NullType ctx, SharedRealm &realm, ValueType &val, std::string &type, bool try_update) {
     if (val->IsObject()) {
         RealmObject::GetObject(val->ToObject())->row.get_index();
@@ -132,6 +131,5 @@ template<> ValueType Accessor::array_value_at_index(NullType ctx, ValueType &val
     v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(val);
     return array->CloneElementAt(index);
 }
-
 
 
