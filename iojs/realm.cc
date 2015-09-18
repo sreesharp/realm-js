@@ -95,6 +95,7 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
         // Invoked as constructor: `new Realm(...)`
         try {
             realm::Realm::Config config;
+            config.cache = false;
             switch (args.Length()) {
             case 0:
                 config.path = writeablePathForFile("default.realm");
