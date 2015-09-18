@@ -67,6 +67,8 @@ void RealmObject::Set(Local<String> name, v8::Local<v8::Value> value,
     //    RealmObject* obj = ObjectWrap::Unwrap<RealmObject>(info.This());
 }
 
+namespace realm {
+
 template<> bool Accessor::dict_has_value_for_key(NullType ctx, ValueType dict, const std::string &prop_name) {
     return dict->ToObject()->Has(ToString(Isolate::GetCurrent(), prop_name.c_str()));
 }
@@ -109,7 +111,7 @@ template<> std::string Accessor::to_string(NullType ctx, ValueType &val) {
     return ToString(val);
 }
 
-template<> realm::DateTime Accessor::to_datetime(NullType ctx, ValueType &val) {
+template<> DateTime Accessor::to_datetime(NullType ctx, ValueType &val) {
     return 0; // FIXME
 }
 
@@ -129,7 +131,9 @@ template<> size_t Accessor::array_size(NullType ctx, ValueType &val) {
 
 template<> ValueType Accessor::array_value_at_index(NullType ctx, ValueType &val, size_t index) {
     v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(val);
-    return array->CloneElementAt(index);
+    return array->Get(index);
 }
+
+} // namespace realm
 
 

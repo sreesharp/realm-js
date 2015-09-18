@@ -115,7 +115,7 @@ realm::ObjectSchema ParseObjectSchema(Local<Object> jsonObjectSchema) {
     size_t numProperties = ValidatedArrayLength(*propertiesObject);
     v8::Array *properties = v8::Array::Cast(*propertiesObject);
     for (unsigned int p = 0; p < numProperties; p++) {
-        Local<Object> property = properties->CloneElementAt(p);
+        Local<Object> property = Local<Object>::Cast(properties->Get(p));
         objectSchema.properties.emplace_back(ParseProperty(property));
 
         Local<Value> defaultValue = property->Get(String::NewFromUtf8(iso, "default"));
@@ -148,9 +148,9 @@ realm::Schema RealmSchema::ParseSchema(Value *value) {
     size_t length = ValidatedArrayLength(value);
     v8::Array *array = v8::Array::Cast(value);
     for (unsigned int i = 0; i < length; i++) {
-        Local<Object> jsonObjectSchema = array->CloneElementAt(i);
+        Local<Object> jsonObjectSchema = Local<Object>::Cast(array->Get(i));
         ObjectSchema objectSchema = ParseObjectSchema(jsonObjectSchema);
-        schema.emplace_back(std::move(objectSchema));
+        schema.push_back(objectSchema);
     }
 
     return realm::Schema(schema);

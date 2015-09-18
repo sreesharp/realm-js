@@ -7,11 +7,11 @@
 #include "realmutils.hpp"
 #include "realmobject.h"
 
-#import "shared_realm.hpp"
-#import "object_accessor.hpp"
-#import "realm_delegate.hpp"
+#include "shared_realm.hpp"
+#include "object_accessor.hpp"
+#include "realm_delegate.hpp"
 
-#import <set>
+#include <set>
 
 using namespace v8;
 
@@ -108,7 +108,10 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
                     Local<Object> configValue = args[0]->ToObject();
                     Local<Value> version = configValue->Get(String::NewFromUtf8(iso, "schemaVersion"));
                     if (!version->IsUndefined()) {
-                        config.schema_version = configValue->Get(String::NewFromUtf8(iso, "prototype"))->IntegerValue();
+                        config.schema_version = configValue->IntegerValue();
+                    }
+                    else {
+                        config.schema_version = 0;
                     }
 
                     Local<Value> schema = configValue->Get(String::NewFromUtf8(iso, "schema"));
