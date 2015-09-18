@@ -46,12 +46,12 @@ var ObjectTests = {
     	var obj = null;
     	realm.write(function() {
     		obj = realm.create('BasicTypesObject', basicTypesValues);
-    		obj.boolCol = false; 
-    		obj.intCol = 2; 
+    		obj.boolCol = false;
+    		obj.intCol = 2;
     		obj.floatCol = 2.2;
     		obj.doubleCol = 2.22;
     		obj.stringCol = 'STRING';
-    		obj.dateCol = new Date(2); 
+    		obj.dateCol = new Date(2);
     		obj.dataCol = 'b';
    		});
    		TestCase.assertEqual(obj.boolCol, false, 'wrong bool value');

@@ -152,7 +152,7 @@ template<> bool Accessor::is_null(NullType ctx, ValueType &val) {
 }
 
 template<> bool Accessor::to_bool(NullType ctx, ValueType &val) {
-    return *val->ToBoolean();
+    return val->ToBoolean()->Value();
 }
 
 template<> long long Accessor::to_long(NullType ctx, ValueType &val) {
