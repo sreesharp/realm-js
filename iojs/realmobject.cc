@@ -72,6 +72,10 @@ void RealmObject::Get(v8::Local<v8::String> name,
         case realm::PropertyTypeString:
             info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, static_cast<std::string>(object->row.get_string(prop->table_column)).c_str()));
             break;
+        case realm::PropertyTypeDate: {
+            info.GetReturnValue().Set(v8::Date::New(isolate, object->row.get_datetime(prop->table_column).get_datetime()));
+            break;
+        }
             /*
         case realm::PropertyTypeData:
             return RJSValueForString(ctx, (std::string)obj->row.get_binary(prop->table_column));
@@ -80,11 +84,6 @@ void RealmObject::Get(v8::Local<v8::String> name,
             *exception = RJSMakeError(ctx, "'Any' type not supported");
             return NULL;
             break;
-        case realm::PropertyTypeDate: {
-            JSValueRef time = JSValueMakeNumber(ctx, obj->row.get_datetime(prop->table_column).get_datetime());
-            return JSObjectMakeDate(ctx, 1, &time, exception);
-            break;
-        }
         case realm::PropertyTypeObject: {
             auto linkObjectSchema = obj->realm->config().schema->find(prop->object_type);
             TableRef table = ObjectStore::table_for_object_type(obj->realm->read_group(), linkObjectSchema->name);
@@ -170,7 +169,13 @@ template<> std::string Accessor::to_string(NullType ctx, ValueType &val) {
 }
 
 template<> DateTime Accessor::to_datetime(NullType ctx, ValueType &val) {
-    return 0; // FIXME
+    Isolate* isolate = Isolate::GetCurrent();
+
+    Handle<v8::Object> obj = val->ToObject();
+    Handle<Function> getTimeFunc = Handle<Function>::Cast(obj->Get(String::NewFromUtf8(isolate, "getTime")));
+
+    Handle<Value> funcResult = getTimeFunc->Call(obj, 0, NULL);
+    return DateTime(funcResult->ToInteger()->Value());
 }
 
 template<> size_t Accessor::to_object_index(NullType ctx, SharedRealm &realm, ValueType &val, std::string &type, bool try_update) {
