@@ -33,7 +33,13 @@ void RealmObject::Init(Handle<Object> exports) {
 
 Local<Object> RealmObject::Create(realm::Object *target) {
     Isolate* isolate = Isolate::GetCurrent();
-    Local<Object> obj = s_template->NewInstance();
+    auto tpl = ObjectTemplate::New(isolate);
+
+    //tpl->SetClassName(String::NewFromUtf8(isolate, "RealmObject"));
+    tpl->SetInternalFieldCount(1);
+    tpl->SetNamedPropertyHandler(RealmObject::Get, RealmObject::Set);
+
+    Local<Object> obj = tpl->NewInstance();
     obj->SetInternalField(0, External::New(isolate, new RealmObject(target)));
     return obj;
 }
@@ -51,9 +57,9 @@ void RealmObject::Get(v8::Local<v8::String> name,
     }
 
     switch (prop->type) {
-        /*
         case realm::PropertyTypeBool:
-            info.GetReturnValue().Set(v8::Boolean(obj->row.get_bool(prop->table_column)));
+            info.GetReturnValue().Set(v8::Boolean::New(isolate, object->row.get_bool(prop->table_column)));
+        /*
         case PropertyTypeInt:
             return JSValueMakeNumber(ctx, obj->row.get_int(prop->table_column));
         case PropertyTypeFloat:
