@@ -198,7 +198,7 @@ void RealmIO::Delete(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
 
-   /* try {
+/*   try {
         if (oneArgument(isolate, args)) {
 
             RealmIO *realm = ObjectWrap::Unwrap<RealmIO>(args.This());
@@ -213,15 +213,15 @@ void RealmIO::Delete(const v8::FunctionCallbackInfo<v8::Value>& args) {
                 size_t length = array->Length();
                 for (long i = length-1; i >= 0; i--) {
                     v8::Local<v8::Object> object = array->Get(i);
-                    realm::Object r_object = ObjectWrap::Unwrap<RealmObject>(object)->wrapped;
-                    realm::TableRef table = realm::ObjectStore::table_for_object_type(r->read_group(), r_object.object_schema.name);
-                    table->move_last_over(r_object.row.get_index());
+                    realm::Object* r_object = RealmObject::GetObject(object);
+                    realm::TableRef table = realm::ObjectStore::table_for_object_type(r->read_group(), r_object->object_schema.name);
+                    table->move_last_over(r_object->row.get_index());
                 }
             }
             else {
-                realm::Object object = ObjectWrap::Unwrap<RealmObject>(args[0])->wrapped;
-                realm::TableRef table = realm::ObjectStore::table_for_object_type(r->read_group(), object.object_schema.name);
-                table->move_last_over(object.row.get_index());
+                realm::Object* object = RealmObject::GetObject(args[0]);
+                realm::TableRef table = realm::ObjectStore::table_for_object_type(r->read_group(), object->object_schema.name);
+                table->move_last_over(object->row.get_index());
             }
         }
     } catch (std::exception &ex) {
