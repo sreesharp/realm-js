@@ -43,7 +43,6 @@ var RealmTests = {
     testRealmConstructorSchemaVersion: function() {
         var defaultRealm = new Realm({schema: []});
         TestCase.assertEqual(defaultRealm.schemaVersion, 0);
-
         TestCase.assertThrows(function() {
             new Realm({schemaVersion: 1});
         }, "Realm already opened at a different schema version");

@@ -21,7 +21,7 @@
         "realmutils.cpp"
       ],
       "include_dirs": [ "../core/include", "../src/object-store" ],
-      "cflags_cc": [ '-DREALM_ENABLE_REPLICATION', '-fexceptions', '-frtti', '-std=c++14', '-g', '-O0' ],
+      "cflags_cc": [ '-mmacosx-version-min=10.8', '-DREALM_ENABLE_REPLICATION', '-fexceptions', '-frtti', '-std=c++14', '-g', '-O0', '-stdlib=libc++', '-g', '-O0'],
       "ldflags": [ '-L../core/', '-lrealm' ],
       "xcode_settings" : {
         'OTHER_CFLAGS' : [ '-mmacosx-version-min=10.8', '-DREALM_ENABLE_REPLICATION', '-fexceptions', '-frtti', '-std=c++14', '-stdlib=libc++', '-g', '-O0' ],
