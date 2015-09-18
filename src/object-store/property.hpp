@@ -80,6 +80,7 @@ namespace realm {
             case PropertyTypeArray:
                 return "array";
         }
+        return nullptr;
     }
 }
 
