@@ -59,23 +59,31 @@ void RealmObject::Get(v8::Local<v8::String> name,
     switch (prop->type) {
         case realm::PropertyTypeBool:
             info.GetReturnValue().Set(v8::Boolean::New(isolate, object->row.get_bool(prop->table_column)));
+            break;
         case realm::PropertyTypeInt:
             info.GetReturnValue().Set(v8::Integer::New(isolate, object->row.get_int(prop->table_column)));
+            break;
         case realm::PropertyTypeFloat:
             info.GetReturnValue().Set(v8::Number::New(isolate, object->row.get_float(prop->table_column)));
+            break;
         case realm::PropertyTypeDouble:
             info.GetReturnValue().Set(v8::Number::New(isolate, object->row.get_double(prop->table_column)));
+            break;
         case realm::PropertyTypeString:
             info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, static_cast<std::string>(object->row.get_string(prop->table_column)).c_str()));
+            break;
             /*
         case realm::PropertyTypeData:
             return RJSValueForString(ctx, (std::string)obj->row.get_binary(prop->table_column));
+            break;
         case realm::PropertyTypeAny:
             *exception = RJSMakeError(ctx, "'Any' type not supported");
             return NULL;
+            break;
         case realm::PropertyTypeDate: {
             JSValueRef time = JSValueMakeNumber(ctx, obj->row.get_datetime(prop->table_column).get_datetime());
             return JSObjectMakeDate(ctx, 1, &time, exception);
+            break;
         }
         case realm::PropertyTypeObject: {
             auto linkObjectSchema = obj->realm->config().schema->find(prop->object_type);
@@ -84,10 +92,12 @@ void RealmObject::Get(v8::Local<v8::String> name,
                 return JSValueMakeNull(ctx);
             }
             return RJSObjectCreate(ctx, Object(obj->realm, *linkObjectSchema, table->get(obj->row.get_link(prop->table_column))));
+            break;
         }
         case realm::PropertyTypeArray: {
             auto arrayObjectSchema = obj->realm->config().schema->find(prop->object_type);
             return RJSArrayCreate(ctx, new ObjectArray(obj->realm, *arrayObjectSchema, static_cast<LinkViewRef>(obj->row.get_linklist(prop->table_column))));
+            break;
         }*/
             default:
             break;
