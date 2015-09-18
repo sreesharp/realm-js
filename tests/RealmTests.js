@@ -140,7 +140,7 @@ var RealmTests = {
             TestCase.assertEqual(obj0.arrayCol.length, 1);
         });
     },
-
+/*
     testRealmCreateWithDefaults: function() {
         var realm = new Realm({schema: [DefaultValuesObjectSchema, TestObjectSchema]});
         realm.write(function() {
@@ -158,7 +158,7 @@ var RealmTests = {
             TestCase.assertEqual(obj.arrayCol[0].doubleCol, DefaultValuesObjectSchema.properties[9].default[0][0]);
         });
     },
-
+*/
     testRealmDelete: function() {
         var realm = new Realm({schema: [TestObjectSchema]});
         realm.write(function() {

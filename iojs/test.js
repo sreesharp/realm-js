@@ -1,33 +1,18 @@
 
 require('Realm.js');
 fs = require('fs')
+cp = require('child_process')
 
 var testPath = '../tests/';
 
-global.TestCase = eval(fs.readFileSync(testPath + 'TestCase.js', 'utf8'));; 
-var testObjects = eval(fs.readFileSync(testPath + 'TestObjects.js', 'utf8'));
-for (var name in testObjects) {
-	global[name] = testObjects[name];
-};
-
-var testSuites = ['RealmTests.js', 'ObjectTests.js'];
+var testSuites = ['ObjectTests.js', 'RealmTests.js'];
 for (var i = 0; i < testSuites.length; i++) {
 	var suite = eval(fs.readFileSync(testPath + testSuites[i], 'utf8'));
 
   	for (var test in suite) {
-  		var caught;
-  		try {
-  			suite[test]();
-  		}
-  		catch(exception) {
-        	caught = exception;
-    	}
-    	if (!caught) {
-    		console.log("PASSED - " + test);
-    	}
-    	else {
-    		console.log("FAILED - " + test + " - " + caught);
-    	}
+
+        var ret = cp.spawnSync('node', ['testcase.js', testSuites[i], test]);
+        console.log(ret.stdout.toString());
 
     	try {
     	fs.unlinkSync("default.realm");

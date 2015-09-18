@@ -33,7 +33,13 @@ void RealmObject::Init(Handle<Object> exports) {
 
 Local<Object> RealmObject::Create(realm::Object *target) {
     Isolate* isolate = Isolate::GetCurrent();
-    Local<Object> obj = s_template->NewInstance();
+    auto tpl = ObjectTemplate::New(isolate);
+
+    //tpl->SetClassName(String::NewFromUtf8(isolate, "RealmObject"));
+    tpl->SetInternalFieldCount(1);
+    tpl->SetNamedPropertyHandler(RealmObject::Get, RealmObject::Set);
+
+    Local<Object> obj = tpl->NewInstance();
     obj->SetInternalField(0, External::New(isolate, new RealmObject(target)));
     return obj;
 }
@@ -44,6 +50,57 @@ void RealmObject::Get(v8::Local<v8::String> name,
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
 
+    realm::Object *object = GetObject(info.Holder());
+    realm::Property *prop = object->object_schema.property_for_name(ToString(name));
+    if (!prop) {
+        return;
+    }
+
+    switch (prop->type) {
+        case realm::PropertyTypeBool:
+            info.GetReturnValue().Set(v8::Boolean::New(isolate, object->row.get_bool(prop->table_column)));
+            break;
+        case realm::PropertyTypeInt:
+            info.GetReturnValue().Set(v8::Integer::New(isolate, object->row.get_int(prop->table_column)));
+            break;
+        case realm::PropertyTypeFloat:
+            info.GetReturnValue().Set(v8::Number::New(isolate, object->row.get_float(prop->table_column)));
+            break;
+        case realm::PropertyTypeDouble:
+            info.GetReturnValue().Set(v8::Number::New(isolate, object->row.get_double(prop->table_column)));
+            break;
+        case realm::PropertyTypeString:
+            info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, static_cast<std::string>(object->row.get_string(prop->table_column)).c_str()));
+            break;
+        case realm::PropertyTypeDate: {
+            info.GetReturnValue().Set(v8::Date::New(isolate, object->row.get_datetime(prop->table_column).get_datetime()));
+            break;
+        }
+        case realm::PropertyTypeData:
+            info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, static_cast<std::string>(object->row.get_binary(prop->table_column)).c_str()));
+            break;
+            /*
+        case realm::PropertyTypeAny:
+            *exception = RJSMakeError(ctx, "'Any' type not supported");
+            return NULL;
+            break;
+        case realm::PropertyTypeObject: {
+            auto linkObjectSchema = obj->realm->config().schema->find(prop->object_type);
+            TableRef table = ObjectStore::table_for_object_type(obj->realm->read_group(), linkObjectSchema->name);
+            if (obj->row.is_null_link(prop->table_column)) {
+                return JSValueMakeNull(ctx);
+            }
+            return RJSObjectCreate(ctx, Object(obj->realm, *linkObjectSchema, table->get(obj->row.get_link(prop->table_column))));
+            break;
+        }
+        case realm::PropertyTypeArray: {
+            auto arrayObjectSchema = obj->realm->config().schema->find(prop->object_type);
+            return RJSArrayCreate(ctx, new ObjectArray(obj->realm, *arrayObjectSchema, static_cast<LinkViewRef>(obj->row.get_linklist(prop->table_column))));
+            break;
+        }*/
+            default:
+            break;
+    }
 }
 
 realm::Object *RealmObject::GetObject(Local<Object> self) {
@@ -62,7 +119,9 @@ void RealmObject::Set(Local<String> name, v8::Local<v8::Value> value,
     HandleScope scope(isolate);
 
     std::string key = *(String::Utf8Value(name));
-    GetObject(info.Holder())->set_property_value<ValueType, NullType>(nullptr, key, value, true);
+    realm::Object *obj = GetObject(info.Holder());
+    //printf("%s - %ld\n", ToString(value->ToString()).c_str(), (long)obj);
+    obj->set_property_value<ValueType, NullType>(nullptr, key, value, true);
 
     //    RealmObject* obj = ObjectWrap::Unwrap<RealmObject>(info.This());
 }
@@ -74,6 +133,7 @@ template<> bool Accessor::dict_has_value_for_key(NullType ctx, ValueType dict, c
 }
 
 template<> ValueType Accessor::dict_value_for_key(NullType ctx, ValueType dict, const std::string &prop_name) {
+    assert(dict->IsObject());
     return dict->ToObject()->Get(ToString(Isolate::GetCurrent(), prop_name.c_str()));
 }
 
@@ -92,7 +152,7 @@ template<> bool Accessor::is_null(NullType ctx, ValueType &val) {
 }
 
 template<> bool Accessor::to_bool(NullType ctx, ValueType &val) {
-    return *val->ToBoolean();
+    return val->ToBoolean()->Value();
 }
 
 template<> long long Accessor::to_long(NullType ctx, ValueType &val) {
@@ -100,6 +160,7 @@ template<> long long Accessor::to_long(NullType ctx, ValueType &val) {
 }
 
 template<> float Accessor::to_float(NullType ctx, ValueType &val) {
+    assert(val->IsNumber());
     return val->ToNumber()->Value();
 }
 
@@ -112,11 +173,17 @@ template<> std::string Accessor::to_string(NullType ctx, ValueType &val) {
 }
 
 template<> DateTime Accessor::to_datetime(NullType ctx, ValueType &val) {
-    return 0; // FIXME
+    Isolate* isolate = Isolate::GetCurrent();
+
+    Handle<v8::Object> obj = val->ToObject();
+    Handle<Function> getTimeFunc = Handle<Function>::Cast(obj->Get(String::NewFromUtf8(isolate, "getTime")));
+
+    Handle<Value> funcResult = getTimeFunc->Call(obj, 0, NULL);
+    return DateTime(funcResult->ToInteger()->Value());
 }
 
 template<> size_t Accessor::to_object_index(NullType ctx, SharedRealm &realm, ValueType &val, std::string &type, bool try_update) {
-    if (val->IsObject()) {
+    if (val->IsObject() && val->ToObject()->InternalFieldCount() > 0) {
         RealmObject::GetObject(val->ToObject())->row.get_index();
     }
 
