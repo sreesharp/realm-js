@@ -77,6 +77,13 @@ void RealmIO::Init(Handle<Object> exports) {
         static_cast<v8::PropertyAttribute>(v8::DontDelete); 
     tpl->Set(constant_name, constant_value, constant_attributes);
 
+    // Realm.schemaVersion
+    v8::Local<v8::String> schema_version_name = 
+        v8::String::NewFromUtf8(isolate, "schemaVersion");
+    v8::Local<v8::Integer> schema_version_value = 
+        v8::Integer::New(isolate, 0);   
+    tpl->Set(schema_version_name, schema_version_value, constant_attributes);
+
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "Realm"), tpl->GetFunction());
 }
@@ -109,9 +116,10 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
                     Local<Object> configValue = args[0]->ToObject();
                     Local<Value> version = configValue->Get(String::NewFromUtf8(iso, "schemaVersion"));
                     if (!version->IsUndefined()) {
-                        config.schema_version = configValue->IntegerValue();
+                        config.schema_version = static_cast<uint64_t>(version->IntegerValue());
                     }
                     else {
+                        // FIXME: look up Realm.schemaVersion
                         config.schema_version = 0;
                     }
 
@@ -125,6 +133,7 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
                         config.path = *String::Utf8Value(path->ToString());
                     }
                     else {
+                        // FIXME: look up Realm.defaultPath
                         config.path = writeablePathForFile("default.realm");
                     }
 
@@ -142,6 +151,10 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
             v8::Local<v8::String> prop_name = v8::String::NewFromUtf8(iso, "path");
             v8::Local<v8::String> prop_value = v8::String::NewFromUtf8(iso, config.path.c_str());   
             (*args.This())->Set(prop_name, prop_value);
+
+            v8::Local<v8::String> schema_version_name = v8::String::NewFromUtf8(iso, "schemaVersion");
+            v8::Local<v8::Integer> schema_version_value = v8::Integer::New(iso, config.schema_version);
+            (*args.This())->Set(schema_version_name, schema_version_value);
 
             r->realm = realm;
             r->Wrap(args.This());
