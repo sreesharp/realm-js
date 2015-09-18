@@ -19,13 +19,15 @@ public:
     static void Get(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value>& info);
     static void Set(v8::Local<v8::String> name, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<v8::Value>& info);
 
+	static realm::Object *GetObject(v8::Local<v8::Object> self);
+
 private:
     ~RealmObject();
 
     static v8::Persistent<v8::Function> constructor;
-    realm::Object *m_object;
-
     static v8::Local<v8::ObjectTemplate> s_template;
+
+    realm::Object *m_object;
 };
 
 #endif
