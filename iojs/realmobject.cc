@@ -59,25 +59,25 @@ void RealmObject::Get(v8::Local<v8::String> name,
     switch (prop->type) {
         case realm::PropertyTypeBool:
             info.GetReturnValue().Set(v8::Boolean::New(isolate, object->row.get_bool(prop->table_column)));
-        /*
-        case PropertyTypeInt:
-            return JSValueMakeNumber(ctx, obj->row.get_int(prop->table_column));
-        case PropertyTypeFloat:
-            return JSValueMakeNumber(ctx, obj->row.get_float(prop->table_column));
-        case PropertyTypeDouble:
-            return JSValueMakeNumber(ctx, obj->row.get_double(prop->table_column));
-        case PropertyTypeString:
-            return RJSValueForString(ctx, obj->row.get_string(prop->table_column));
-        case PropertyTypeData:
+        case realm::PropertyTypeInt:
+            info.GetReturnValue().Set(v8::Integer::New(isolate, object->row.get_int(prop->table_column)));
+        case realm::PropertyTypeFloat:
+            info.GetReturnValue().Set(v8::Number::New(isolate, object->row.get_float(prop->table_column)));
+        case realm::PropertyTypeDouble:
+            info.GetReturnValue().Set(v8::Number::New(isolate, object->row.get_double(prop->table_column)));
+        case realm::PropertyTypeString:
+            info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, static_cast<std::string>(object->row.get_string(prop->table_column)).c_str()));
+            /*
+        case realm::PropertyTypeData:
             return RJSValueForString(ctx, (std::string)obj->row.get_binary(prop->table_column));
-        case PropertyTypeAny:
+        case realm::PropertyTypeAny:
             *exception = RJSMakeError(ctx, "'Any' type not supported");
             return NULL;
-        case PropertyTypeDate: {
+        case realm::PropertyTypeDate: {
             JSValueRef time = JSValueMakeNumber(ctx, obj->row.get_datetime(prop->table_column).get_datetime());
             return JSObjectMakeDate(ctx, 1, &time, exception);
         }
-        case PropertyTypeObject: {
+        case realm::PropertyTypeObject: {
             auto linkObjectSchema = obj->realm->config().schema->find(prop->object_type);
             TableRef table = ObjectStore::table_for_object_type(obj->realm->read_group(), linkObjectSchema->name);
             if (obj->row.is_null_link(prop->table_column)) {
@@ -85,7 +85,7 @@ void RealmObject::Get(v8::Local<v8::String> name,
             }
             return RJSObjectCreate(ctx, Object(obj->realm, *linkObjectSchema, table->get(obj->row.get_link(prop->table_column))));
         }
-        case PropertyTypeArray: {
+        case realm::PropertyTypeArray: {
             auto arrayObjectSchema = obj->realm->config().schema->find(prop->object_type);
             return RJSArrayCreate(ctx, new ObjectArray(obj->realm, *arrayObjectSchema, static_cast<LinkViewRef>(obj->row.get_linklist(prop->table_column))));
         }*/
