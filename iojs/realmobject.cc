@@ -131,7 +131,7 @@ template<> size_t Accessor::array_size(NullType ctx, ValueType &val) {
 
 template<> ValueType Accessor::array_value_at_index(NullType ctx, ValueType &val, size_t index) {
     v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(val);
-    return array->CloneElementAt(index);
+    return array->Get(index);
 }
 
 } // namespace realm
