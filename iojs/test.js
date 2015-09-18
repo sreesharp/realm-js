@@ -10,7 +10,7 @@ for (var name in testObjects) {
 	global[name] = testObjects[name];
 };
 
-var testSuites = ['RealmTests.js', 'ObjectTests.js'];
+var testSuites = ['ObjectTests.js', 'RealmTests.js'];
 for (var i = 0; i < testSuites.length; i++) {
 	var suite = eval(fs.readFileSync(testPath + testSuites[i], 'utf8'));
 
