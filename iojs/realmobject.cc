@@ -76,10 +76,10 @@ void RealmObject::Get(v8::Local<v8::String> name,
             info.GetReturnValue().Set(v8::Date::New(isolate, object->row.get_datetime(prop->table_column).get_datetime()));
             break;
         }
-            /*
         case realm::PropertyTypeData:
-            return RJSValueForString(ctx, (std::string)obj->row.get_binary(prop->table_column));
+            info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, static_cast<std::string>(object->row.get_binary(prop->table_column)).c_str()));
             break;
+            /*
         case realm::PropertyTypeAny:
             *exception = RJSMakeError(ctx, "'Any' type not supported");
             return NULL;
