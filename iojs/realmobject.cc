@@ -119,7 +119,9 @@ void RealmObject::Set(Local<String> name, v8::Local<v8::Value> value,
     HandleScope scope(isolate);
 
     std::string key = *(String::Utf8Value(name));
-    GetObject(info.Holder())->set_property_value<ValueType, NullType>(nullptr, key, value, true);
+    realm::Object *obj = GetObject(info.Holder());
+    //printf("%s - %ld\n", ToString(value->ToString()).c_str(), (long)obj);
+    obj->set_property_value<ValueType, NullType>(nullptr, key, value, true);
 
     //    RealmObject* obj = ObjectWrap::Unwrap<RealmObject>(info.This());
 }
@@ -131,6 +133,7 @@ template<> bool Accessor::dict_has_value_for_key(NullType ctx, ValueType dict, c
 }
 
 template<> ValueType Accessor::dict_value_for_key(NullType ctx, ValueType dict, const std::string &prop_name) {
+    assert(dict->IsObject());
     return dict->ToObject()->Get(ToString(Isolate::GetCurrent(), prop_name.c_str()));
 }
 
@@ -157,6 +160,7 @@ template<> long long Accessor::to_long(NullType ctx, ValueType &val) {
 }
 
 template<> float Accessor::to_float(NullType ctx, ValueType &val) {
+    assert(val->IsNumber());
     return val->ToNumber()->Value();
 }
 
@@ -179,7 +183,7 @@ template<> DateTime Accessor::to_datetime(NullType ctx, ValueType &val) {
 }
 
 template<> size_t Accessor::to_object_index(NullType ctx, SharedRealm &realm, ValueType &val, std::string &type, bool try_update) {
-    if (val->IsObject()) {
+    if (val->IsObject() && val->ToObject()->InternalFieldCount() > 0) {
         RealmObject::GetObject(val->ToObject())->row.get_index();
     }
 
