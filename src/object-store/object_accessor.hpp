@@ -7,10 +7,10 @@
 
 #include <string>
 #include "shared_realm.hpp"
+#include "schema.hpp"
 #include "list.hpp"
 
 namespace realm {
-
     class Object {
     public:
         Object(SharedRealm r, const ObjectSchema &s, Row o) : m_realm(r), object_schema(s), m_row(o) {}
