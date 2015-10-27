@@ -19,11 +19,15 @@ namespace realm {
 
         size_t size();
 
-        Object get(std::size_t row_index);
-        void add(std::size_t objct_index);
-        void insert(std::size_t row_index, std::size_t objct_index);
-        void set(std::size_t row_index, std::size_t objct_index);
-        void remove(std::size_t row_index);
+        Object get(std::size_t list_index);
+
+        void add(std::size_t row_index);
+
+        void insert(std::size_t list_index, std::size_t row_index);
+
+        void set(std::size_t list_index, std::size_t row_index);
+
+        void remove(std::size_t list_index);
 
       private:
         SharedRealm m_realm;
