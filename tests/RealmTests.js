@@ -31,7 +31,7 @@ var RealmTests = {
 
         var testPath = TestCase.realmPathForFile('test1.realm');
         var realm = new Realm({schema: [], path: testPath});
-        //TestCase.assertTrue(realm instanceof Realm);
+        TestCase.assertTrue(realm instanceof Realm);
         TestCase.assertEqual(realm.path, testPath);
 
         var testPath2 = TestCase.realmPathForFile('test2.realm');

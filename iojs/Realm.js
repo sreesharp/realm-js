@@ -10,3 +10,5 @@ global.RealmType = {
 	'Object': 	'RealmTypeObject',
 	'Array': 	'RealmTypeArray',
 };
+global.Realm.defaultPath = './default.realm';
+global.Realm.schemaVersion = 0;

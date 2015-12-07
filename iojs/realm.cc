@@ -68,25 +68,80 @@ void RealmIO::Init(Handle<Object> exports) {
     NODE_SET_PROTOTYPE_METHOD(tpl, "write",       RealmIO::Write);
     // FIXME: addNotification
 
-    // Realm.defaultPath
-    v8::Local<v8::String> constant_name = 
-        v8::String::NewFromUtf8(isolate, "defaultPath");
-    v8::Local<v8::String> constant_value = 
-        v8::String::NewFromUtf8(isolate, "./default.realm");   
-    v8::PropertyAttribute constant_attributes =
-        static_cast<v8::PropertyAttribute>(v8::DontDelete); 
-    tpl->Set(constant_name, constant_value, constant_attributes);
-
-    // Realm.schemaVersion
-    v8::Local<v8::String> schema_version_name = 
-        v8::String::NewFromUtf8(isolate, "schemaVersion");
-    v8::Local<v8::Integer> schema_version_value = 
-        v8::Integer::New(isolate, 0);   
-    tpl->Set(schema_version_name, schema_version_value, constant_attributes);
+    tpl->InstanceTemplate()->SetAccessor(String::NewFromUtf8(isolate, "defaultPath"), RealmIO::DefaultPathGetter, RealmIO::DefaultPathSetter);
+    tpl->InstanceTemplate()->SetAccessor(String::NewFromUtf8(isolate, "schemaVersion"), RealmIO::SchemaVersionGetter, RealmIO::SchemaVersionSetter);
+    tpl->InstanceTemplate()->SetAccessor(String::NewFromUtf8(isolate, "path"), RealmIO::PathGetter, RealmIO::PathSetter);
 
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "Realm"), tpl->GetFunction());
 }
+
+void RealmIO::DefaultPathGetter(Local<String> property, const PropertyCallbackInfo<Value>& info) {
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
+
+    RealmIO* r = ObjectWrap::Unwrap<RealmIO>(info.This());
+    info.GetReturnValue().Set(ToString(isolate, r->defaultPath.c_str()));
+}
+
+void RealmIO::DefaultPathSetter(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
+
+    RealmIO* r = ObjectWrap::Unwrap<RealmIO>(info.This());
+
+    if (value->IsString()) {
+        r->defaultPath = ToString(value);
+    }
+    else {
+        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "String expected")));
+    }
+}
+
+void RealmIO::SchemaVersionGetter(Local<String> property, const PropertyCallbackInfo<Value>& info) {
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
+
+    RealmIO* r = ObjectWrap::Unwrap<RealmIO>(info.This());
+    info.GetReturnValue().Set(Integer::New(isolate, r->schemaVersion));
+}
+
+void RealmIO::SchemaVersionSetter(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
+
+    RealmIO* r = ObjectWrap::Unwrap<RealmIO>(info.This());
+
+    if (value->IsNumber()) {
+        r->schemaVersion = value->IntegerValue();
+    }
+    else {
+        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Integer expected")));
+    }
+}
+
+void RealmIO::PathGetter(Local<String> property, const PropertyCallbackInfo<Value>& info) {
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
+
+    RealmIO* r = ObjectWrap::Unwrap<RealmIO>(info.This());
+    info.GetReturnValue().Set(ToString(isolate, r->path.c_str()));
+}
+
+void RealmIO::PathSetter(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
+
+    RealmIO* r = ObjectWrap::Unwrap<RealmIO>(info.This());
+
+    if (value->IsString()) {
+        r->path = ToString(value);
+    }
+    else {
+        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "String expected")));
+    }
+}
+
 
 std::string writeablePathForFile(const std::string &fileName) {
     // FIXME: find a better place than current directory
@@ -101,6 +156,7 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
     if (args.IsConstructCall()) {
         // Invoked as constructor: `new Realm(...)`
         try {
+            RealmIO* r = new RealmIO();
             realm::Realm::Config config;
             config.cache = false;
             switch (args.Length()) {
@@ -114,13 +170,13 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
                 }
                 else if (args[0]->IsObject()) {
                     Local<Object> configValue = args[0]->ToObject();
+
                     Local<Value> version = configValue->Get(String::NewFromUtf8(iso, "schemaVersion"));
-                    if (!version->IsUndefined()) {
-                        config.schema_version = static_cast<uint64_t>(version->IntegerValue());
+                    if (version->IsUndefined()) {
+                        config.schema_version = r->schemaVersion;
                     }
                     else {
-                        // FIXME: look up Realm.schemaVersion
-                        config.schema_version = 0;
+                        config.schema_version = static_cast<uint64_t>(version->IntegerValue());
                     }
 
                     Local<Value> schema = configValue->Get(String::NewFromUtf8(iso, "schema"));
@@ -129,33 +185,29 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
                     }
 
                     Local<Value> path = configValue->Get(String::NewFromUtf8(iso, "path"));
-                    if (!path->IsUndefined()) {
-                        config.path = *String::Utf8Value(path->ToString());
+                    if (path->IsUndefined()) {
+                        config.path = r->defaultPath;
                     }
                     else {
-                        // FIXME: look up Realm.defaultPath
-                        config.path = writeablePathForFile("default.realm");
+                        std::string p = ToString(path);
+                        if (p == "") {
+                            config.path = r->defaultPath;
+                        }
+                        else {
+                            config.path = ToString(path);
+                        }
                     }
-
-                    break;
                 }
+                break;
             default:
                 makeError(iso, "invalid arguments.");
             }
-            RealmIO* r = new RealmIO();
             realm::SharedRealm realm = realm::Realm::get_shared_realm(config);
             if (!realm->m_delegate) {
                 realm->m_delegate = std::make_unique<RJSRealmDelegate>();
             }
 
-            v8::Local<v8::String> prop_name = v8::String::NewFromUtf8(iso, "path");
-            v8::Local<v8::String> prop_value = v8::String::NewFromUtf8(iso, config.path.c_str());   
-            (*args.This())->Set(prop_name, prop_value);
-
-            v8::Local<v8::String> schema_version_name = v8::String::NewFromUtf8(iso, "schemaVersion");
-            v8::Local<v8::Integer> schema_version_value = v8::Integer::New(iso, config.schema_version);
-            (*args.This())->Set(schema_version_name, schema_version_value);
-
+            r->path = config.path;
             r->realm = realm;
             r->Wrap(args.This());
             args.GetReturnValue().Set(args.This());
