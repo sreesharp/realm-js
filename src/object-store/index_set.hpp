@@ -20,6 +20,7 @@
 #define REALM_INDEX_SET_HPP
 
 #include <vector>
+#include <stddef.h>
 
 namespace realm {
 class IndexSet {

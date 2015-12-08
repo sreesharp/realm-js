@@ -22,6 +22,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include <mutex>
 
 #include "object_store.hpp"
 

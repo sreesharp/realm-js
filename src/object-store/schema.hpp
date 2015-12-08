@@ -20,6 +20,7 @@
 #define REALM_SCHEMA_HPP
 
 #include <vector>
+#include <string>
 
 namespace realm {
 class ObjectSchema;

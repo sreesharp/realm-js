@@ -62,7 +62,7 @@ void List::remove(size_t row_ndx) {
 void List::verify_valid_row(size_t row_ndx, bool insertion) {
     size_t size = m_link_view->size();
     if (row_ndx > size || (!insertion && row_ndx == size)) {
-        throw std::out_of_range(std::string("Index ") + std::to_string(row_ndx) + " is outside of range 0..." + std::to_string(size) + ".");
+        throw std::out_of_range(std::string("Index ") + to_string(row_ndx) + " is outside of range 0..." + to_string(size) + ".");
     }
 }
 
