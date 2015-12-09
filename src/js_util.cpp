@@ -2,7 +2,8 @@
  * Proprietary and Confidential
  */
 
-#import "js_util.hpp"
+#include "js_util.hpp"
+#include <JavaScriptCore/JSStringRef.h>
 
 using namespace realm;
 
@@ -47,7 +48,7 @@ std::string RJSStringForJSString(JSStringRef jsString) {
 }
 
 std::string RJSStringForValue(JSContextRef ctx, JSValueRef value) {
-    JSValueRef *exception;
+    JSValueRef *exception = nullptr;
     JSStringRef jsString = JSValueToStringCopy(ctx, value, exception);
     if (!jsString) {
         throw RJSException(ctx, *exception);

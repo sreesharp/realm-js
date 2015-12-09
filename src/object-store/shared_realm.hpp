@@ -22,6 +22,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include <mutex>
 
 #include "object_store.hpp"
 
@@ -121,8 +122,10 @@ namespace realm {
 
         Group *m_group = nullptr;
 
+#if __APPLE__
         std::shared_ptr<_impl::ExternalCommitHelper> m_notifier;
-
+#endif
+        
       public:
         std::unique_ptr<BindingContext> m_binding_context;
 
