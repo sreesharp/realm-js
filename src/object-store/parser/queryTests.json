@@ -251,6 +251,26 @@
     ]
 },
 
+"listTests" : {
+    "schema" : [
+        { "name": "IntObject", "properties": [
+            { "name": "intCol", "type": "int" }
+        ]},
+        { "name": "ListObject", "properties": [
+            { "name": "listCol", "type": "list", "objectType": "IntObject" }
+        ]}
+    ],
+    "objects": [
+        { "type": "ListObject", "value": [[[0], [1]]] },
+        { "type": "ListObject", "value": [[[2], [3], [4]]] }
+    ],
+    "tests": [
+        ["QueryCount", 1, "ListObject", "$0 IN listCol", [0, "listCol", 0]],
+        ["QueryCount", 1, "ListObject", "$0 IN listCol", [0, "listCol", 1]],
+        ["QueryCount", 1, "ListObject", "$0 IN listCol", [1, "listCol", 0]]
+    ]
+},
+
 "compoundTests" : {
     "schema" : [
         { "name": "IntObject",  

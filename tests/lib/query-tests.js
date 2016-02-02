@@ -52,12 +52,12 @@ function runQuerySuite(suite) {
         for (var i = startArg + 2; i < test.length; i++) {
             var arg = test[i];
             if (Array.isArray(arg)) {
-                // aray arguments correspond to [objectAtIndex, propertyName]
-                args.push(objects[arg[0]][arg[1]]);
+                // Array arguments correspond to [objectAtIndex, ...propertyNames]
+                arg = arg.reduce(function(obj, prop) {
+                    return obj[prop];
+                }, objects);
             }
-            else {
-                args.push(arg);
-            }
+            args.push(arg);
         }
         return args;
     }
@@ -117,6 +117,9 @@ module.exports = BaseTest.extend({
     },
     testObjectQueries: function() {
         runQuerySuite(testCases.objectTests);
+    },
+    testListQueries: function() {
+        runQuerySuite(testCases.listTests);
     },
     testCompoundQueries: function() {
         runQuerySuite(testCases.compoundTests);
