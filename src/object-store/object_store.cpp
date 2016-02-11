@@ -30,6 +30,7 @@
 
 using namespace realm;
 
+namespace {
 const char * const c_metadataTableName = "metadata";
 const char * const c_versionColumnName = "version";
 const size_t c_versionColumnIndex = 0;
@@ -42,8 +43,8 @@ const size_t c_primaryKeyPropertyNameColumnIndex =  1;
 
 const size_t c_zeroRowIndex = 0;
 
-const std::string c_object_table_prefix = "class_";
-const size_t c_object_table_prefix_length = c_object_table_prefix.length();
+const char c_object_table_prefix[] = "class_";
+}
 
 const uint64_t ObjectStore::NotVersioned = std::numeric_limits<uint64_t>::max();
 
@@ -119,15 +120,15 @@ void ObjectStore::set_primary_key_for_object(Group *group, StringData object_typ
     }
 }
 
-std::string ObjectStore::object_type_for_table_name(const std::string &table_name) {
-    if (table_name.size() >= c_object_table_prefix_length && table_name.compare(0, c_object_table_prefix_length, c_object_table_prefix) == 0) {
-        return table_name.substr(c_object_table_prefix_length, table_name.length() - c_object_table_prefix_length);
+StringData ObjectStore::object_type_for_table_name(StringData table_name) {
+    if (table_name.begins_with(c_object_table_prefix)) {
+        return table_name.substr(sizeof(c_object_table_prefix) - 1);
     }
-    return std::string();
+    return StringData();
 }
 
-std::string ObjectStore::table_name_for_object_type(const std::string &object_type) {
-    return c_object_table_prefix + object_type;
+std::string ObjectStore::table_name_for_object_type(StringData object_type) {
+    return std::string(c_object_table_prefix) + object_type.data();
 }
 
 TableRef ObjectStore::table_for_object_type(Group *group, StringData object_type) {
@@ -138,7 +139,7 @@ ConstTableRef ObjectStore::table_for_object_type(const Group *group, StringData 
     return group->get_table(table_name_for_object_type(object_type));
 }
 
-TableRef ObjectStore::table_for_object_type_create_if_needed(Group *group, const StringData &object_type, bool &created) {
+TableRef ObjectStore::table_for_object_type_create_if_needed(Group *group, StringData object_type, bool &created) {
     return group->get_or_add_table(table_name_for_object_type(object_type), &created);
 }
 
@@ -147,6 +148,13 @@ static inline bool property_has_changed(Property const& p1, Property const& p2) 
         || p1.name != p2.name
         || p1.object_type != p2.object_type
         || p1.is_nullable != p2.is_nullable;
+}
+
+static inline bool property_can_be_migrated_to_nullable(const Property& old_property, const Property& new_property) {
+    return old_property.type == new_property.type
+        && !old_property.is_nullable
+        && new_property.is_nullable
+        && new_property.name == old_property.name;
 }
 
 void ObjectStore::verify_schema(Schema const& actual_schema, Schema& target_schema, bool allow_missing_tables) {
@@ -205,6 +213,45 @@ std::vector<ObjectSchemaValidationException> ObjectStore::verify_object_schema(O
     return exceptions;
 }
 
+template <typename T>
+static void copy_property_values(const Property& old_property, const Property& new_property, Table& table,
+                                 T (Table::*getter)(std::size_t, std::size_t) const noexcept,
+                                 void (Table::*setter)(std::size_t, std::size_t, T)) {
+    size_t old_column = old_property.table_column, new_column = new_property.table_column;
+    size_t count = table.size();
+    for (size_t i = 0; i < count; i++) {
+        (table.*setter)(new_column, i, (table.*getter)(old_column, i));
+    }
+}
+
+static void copy_property_values(const Property& source, const Property& destination, Table& table) {
+    switch (destination.type) {
+        case PropertyTypeInt:
+            copy_property_values(source, destination, table, &Table::get_int, &Table::set_int);
+            break;
+        case PropertyTypeBool:
+            copy_property_values(source, destination, table, &Table::get_bool, &Table::set_bool);
+            break;
+        case PropertyTypeFloat:
+            copy_property_values(source, destination, table, &Table::get_float, &Table::set_float);
+            break;
+        case PropertyTypeDouble:
+            copy_property_values(source, destination, table, &Table::get_double, &Table::set_double);
+            break;
+        case PropertyTypeString:
+            copy_property_values(source, destination, table, &Table::get_string, &Table::set_string);
+            break;
+        case PropertyTypeData:
+            copy_property_values(source, destination, table, &Table::get_binary, &Table::set_binary);
+            break;
+        case PropertyTypeDate:
+            copy_property_values(source, destination, table, &Table::get_datetime, &Table::set_datetime);
+            break;
+        default:
+            break;
+    }
+}
+
 // set references to tables on targetSchema and create/update any missing or out-of-date tables
 // if update existing is true, updates existing tables, otherwise validates existing tables
 // NOTE: must be called from within write transaction
@@ -230,13 +277,40 @@ bool ObjectStore::create_tables(Group *group, Schema &target_schema, bool update
         ObjectSchema current_schema(group, target_object_schema->name);
         std::vector<Property> &target_props = target_object_schema->properties;
 
+        // handle columns changing from required to optional
+        for (auto& current_prop : current_schema.properties) {
+            auto target_prop = target_object_schema->property_for_name(current_prop.name);
+            if (!target_prop || !property_can_be_migrated_to_nullable(current_prop, *target_prop))
+                continue;
+
+            target_prop->table_column = current_prop.table_column;
+            current_prop.table_column = current_prop.table_column + 1;
+
+            table->insert_column(target_prop->table_column, DataType(target_prop->type), target_prop->name, target_prop->is_nullable);
+            copy_property_values(current_prop, *target_prop, *table);
+            table->remove_column(current_prop.table_column);
+
+            current_prop.table_column = target_prop->table_column;
+            changed = true;
+        }
+
+        bool inserted_placeholder_column = false;
+
         // remove extra columns
         size_t deleted = 0;
         for (auto& current_prop : current_schema.properties) {
             current_prop.table_column -= deleted;
 
             auto target_prop = target_object_schema->property_for_name(current_prop.name);
-            if (!target_prop || property_has_changed(current_prop, *target_prop)) {
+            if (!target_prop || (property_has_changed(current_prop, *target_prop)
+                                 && !property_can_be_migrated_to_nullable(current_prop, *target_prop))) {
+                if (deleted == current_schema.properties.size() - 1) {
+                    // We're about to remove the last column from the table. Insert a placeholder column to preserve
+                    // the number of rows in the table for the addition of new columns below.
+                    table->add_column(type_Bool, "placeholder");
+                    inserted_placeholder_column = true;
+                }
+
                 table->remove_column(current_prop.table_column);
                 ++deleted;
                 current_prop.table_column = npos;
@@ -270,6 +344,15 @@ bool ObjectStore::create_tables(Group *group, Schema &target_schema, bool update
             }
             else {
                 target_prop.table_column = current_prop->table_column;
+            }
+        }
+
+        if (inserted_placeholder_column) {
+            // We inserted a placeholder due to removing all columns from the table. Remove it, and update the indices
+            // of any columns that we inserted after it.
+            table->remove_column(0);
+            for (auto& target_prop : target_props) {
+                target_prop.table_column--;
             }
         }
 
@@ -412,7 +495,7 @@ void ObjectStore::validate_primary_column_uniqueness(const Group *group, Schema 
     }
 }
 
-void ObjectStore::delete_data_for_object(Group *group, const StringData &object_type) {
+void ObjectStore::delete_data_for_object(Group *group, StringData object_type) {
     TableRef table = table_for_object_type(group, object_type);
     if (table) {
         group->remove_table(table->get_index_in_group());
@@ -420,7 +503,19 @@ void ObjectStore::delete_data_for_object(Group *group, const StringData &object_
     }
 }
 
-
+bool ObjectStore::is_empty(const Group *group) {
+    for (size_t i = 0; i < group->size(); i++) {
+        ConstTableRef table = group->get_table(i);
+        std::string object_type = object_type_for_table_name(table->get_name());
+        if (!object_type.length()) {
+            continue;
+        }
+        if (!table->is_empty()) {
+            return false;
+        }
+    }
+    return true;
+}
 
 InvalidSchemaVersionException::InvalidSchemaVersionException(uint64_t old_version, uint64_t new_version) :
     m_old_version(old_version), m_new_version(new_version)
@@ -432,8 +527,12 @@ DuplicatePrimaryKeyValueException::DuplicatePrimaryKeyValueException(std::string
     m_object_type(object_type), m_property(property)
 {
     m_what = "Primary key property '" + property.name + "' has duplicate values after migration.";
-};
+}
 
+DuplicatePrimaryKeyValueException::DuplicatePrimaryKeyValueException(std::string const& object_type, Property const& property, const std::string message) : m_object_type(object_type), m_property(property)
+{
+    m_what = message;
+}
 
 SchemaValidationException::SchemaValidationException(std::vector<ObjectSchemaValidationException> const& errors) :
     m_validation_errors(errors)
@@ -469,11 +568,7 @@ InvalidNullabilityException::InvalidNullabilityException(std::string const& obje
         m_what = "'Object' property '" + property.name + "' must be nullable.";
     }
     else {
-#if REALM_NULL_STRINGS == 1
         m_what = "Array or Mixed property '" + property.name + "' cannot be nullable";
-#else
-        m_what = "Only 'Object' property types are nullable";
-#endif
     }
 }
 
@@ -518,3 +613,4 @@ DuplicatePrimaryKeysException::DuplicatePrimaryKeysException(std::string const& 
 {
     m_what = "Duplicate primary keys for object '" + object_type + "'.";
 }
+

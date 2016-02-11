@@ -1,0 +1,13 @@
+{
+  "name": "ReactTests",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "react-native start"
+  },
+  "dependencies": {
+    "react-native": "0.18.0",
+    "realm": "file:../..",
+    "realm-tests": "file:../lib"
+  }
+}

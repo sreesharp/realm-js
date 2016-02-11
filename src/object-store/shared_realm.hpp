@@ -19,22 +19,24 @@
 #ifndef REALM_REALM_HPP
 #define REALM_REALM_HPP
 
-#include <map>
+#include "object_store.hpp"
+
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
 
-#include "object_store.hpp"
-
 namespace realm {
     class ClientHistory;
-    class ExternalCommitHelper;
     class Realm;
     class RealmCache;
-    class RealmDelegate;
+    class BindingContext;
     typedef std::shared_ptr<Realm> SharedRealm;
     typedef std::weak_ptr<Realm> WeakRealm;
+
+    namespace _impl {
+        class ExternalCommitHelper;
+    }
 
     class Realm : public std::enable_shared_from_this<Realm>
     {
@@ -47,6 +49,7 @@ namespace realm {
             bool read_only = false;
             bool in_memory = false;
             bool cache = true;
+            bool disable_format_upgrade = false;
             std::vector<char> encryption_key;
 
             std::unique_ptr<Schema> schema;
@@ -54,8 +57,8 @@ namespace realm {
 
             MigrationFunction migration_function;
 
-            Config() = default;
-            Config(Config&&) = default;
+            Config();
+            Config(Config&&);
             Config(const Config& c);
             ~Config();
 
@@ -87,6 +90,7 @@ namespace realm {
         void commit_transaction();
         void cancel_transaction();
         bool is_in_transaction() const { return m_in_transaction; }
+        bool is_in_read_transaction() const { return !!m_group; }
 
         bool refresh();
         void set_auto_refresh(bool auto_refresh) { m_auto_refresh = auto_refresh; }
@@ -98,6 +102,11 @@ namespace realm {
 
         std::thread::id thread_id() const { return m_thread_id; }
         void verify_thread() const;
+        void verify_in_write() const;
+
+        // Close this Realm and remove it from the cache. Continuing to use a
+        // Realm after closing it will produce undefined behavior.
+        void close();
 
         ~Realm();
 
@@ -115,10 +124,10 @@ namespace realm {
 
         Group *m_group = nullptr;
 
-        std::shared_ptr<ExternalCommitHelper> m_notifier;
+        std::shared_ptr<_impl::ExternalCommitHelper> m_notifier;
 
       public:
-        std::unique_ptr<RealmDelegate> m_delegate;
+        std::unique_ptr<BindingContext> m_binding_context;
 
         // FIXME private
         Group *read_group();
@@ -139,17 +148,15 @@ namespace realm {
         std::mutex m_mutex;
     };
 
-    class RealmFileException : public std::runtime_error
-    {
-      public:
-        enum class Kind
-        {
+    class RealmFileException : public std::runtime_error {
+    public:
+        enum class Kind {
             /** Thrown for any I/O related exception scenarios when a realm is opened. */
             AccessError,
             /** Thrown if the user does not have permission to open or create
              the specified file in the specified access mode when the realm is opened. */
             PermissionDenied,
-            /** Thrown if no_create was specified and the file did already exist when the realm is opened. */
+            /** Thrown if create_Always was specified and the file did already exist when the realm is opened. */
             Exists,
             /** Thrown if no_create was specified and the file was not found when the realm is opened. */
             NotFound,
@@ -157,35 +164,36 @@ namespace realm {
              process which cannot share with the current process due to an
              architecture mismatch. */
             IncompatibleLockFile,
+            /** Thrown if the file needs to be upgraded to a new format, but upgrades have been explicitly disabled. */
+            FormatUpgradeRequired,
         };
-        RealmFileException(Kind kind, std::string message) : std::runtime_error(message), m_kind(kind) {}
+        RealmFileException(Kind kind, std::string path, std::string message) :
+            std::runtime_error(std::move(message)), m_kind(kind), m_path(std::move(path)) {}
         Kind kind() const { return m_kind; }
-        
-      private:
+        const std::string& path() const { return m_path; }
+
+    private:
         Kind m_kind;
+        std::string m_path;
     };
 
-    class MismatchedConfigException : public std::runtime_error
-    {
-      public:
+    class MismatchedConfigException : public std::runtime_error {
+    public:
         MismatchedConfigException(std::string message) : std::runtime_error(message) {}
     };
 
-    class InvalidTransactionException : public std::runtime_error
-    {
-      public:
+    class InvalidTransactionException : public std::runtime_error {
+    public:
         InvalidTransactionException(std::string message) : std::runtime_error(message) {}
     };
 
-    class IncorrectThreadException : public std::runtime_error
-    {
-      public:
-        IncorrectThreadException(std::string message) : std::runtime_error(message) {}
+    class IncorrectThreadException : public std::runtime_error {
+    public:
+        IncorrectThreadException() : std::runtime_error("Realm accessed from incorrect thread.") {}
     };
 
-    class UnitializedRealmException : public std::runtime_error
-    {
-      public:
+    class UnitializedRealmException : public std::runtime_error {
+    public:
         UnitializedRealmException(std::string message) : std::runtime_error(message) {}
     };
 }
