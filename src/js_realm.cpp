@@ -11,73 +11,12 @@
 
 #import "shared_realm.hpp"
 #import "object_accessor.hpp"
-<<<<<<< HEAD:src/RJSRealm.mm
-#import "realm_delegate.hpp"
-=======
 #import "binding_context.hpp"
->>>>>>> a0145df5e4f514dbf213399b43f54266a4abb9ac:src/js_realm.cpp
 
 #import <set>
 
 using namespace realm;
 
-<<<<<<< HEAD:src/RJSRealm.mm
-class RJSRealmDelegate : public RealmDelegate {
-public:
-    typedef std::shared_ptr<std::function<void(const std::string)>> NotificationFunction;
-    void add_notification(NotificationFunction &notification) { m_notifications.insert(notification); }
-    void remove_notification(NotificationFunction notification) { m_notifications.erase(notification); }
-    void remove_all_notifications() { m_notifications.clear(); }
-    std::set<NotificationFunction> m_notifications;
-
-    virtual void changes_available() {
-        for (NotificationFunction notification : m_notifications) {
-            (*notification)("RefreshRequiredNotification");
-        }
-    }
-
-    virtual void did_change(std::vector<ObserverState> const& observers,
-                            std::vector<void*> const& invalidated) {
-        for (NotificationFunction notification : m_notifications) {
-            (*notification)("DidChangeNotification");
-        }
-    }
-
-    virtual std::vector<ObserverState> get_observed_rows() {
-        return std::vector<ObserverState>();
-    }
-
-    virtual void will_change(std::vector<ObserverState> const& observers,
-                             std::vector<void*> const& invalidated) {
-
-    }
-};
-
-std::string writeablePathForFile(const std::string &fileName) {
-#if TARGET_OS_IPHONE
-    // On iOS the Documents directory isn't user-visible, so put files there
-    NSString *path = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
-#else
-    // On OS X it is, so put files in Application Support. If we aren't running
-    // in a sandbox, put it in a subdirectory based on the bundle identifier
-    // to avoid accidentally sharing files between applications
-    NSString *path = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES)[0];
-    if (![[NSProcessInfo processInfo] environment][@"APP_SANDBOX_CONTAINER_ID"]) {
-        NSString *identifier = [[NSBundle mainBundle] bundleIdentifier];
-        if ([identifier length] == 0) {
-            identifier = [[[NSBundle mainBundle] executablePath] lastPathComponent];
-        }
-        path = [path stringByAppendingPathComponent:identifier];
-
-        // create directory
-        [[NSFileManager defaultManager] createDirectoryAtPath:path
-                                  withIntermediateDirectories:YES
-                                                   attributes:nil
-                                                        error:nil];
-    }
-#endif
-    return std::string(path.UTF8String) + "/" + fileName;
-=======
 class RJSRealmDelegate : public BindingContext {
 public:
     virtual void changes_available() {
@@ -159,7 +98,6 @@ public:
 
 std::map<std::string, ObjectDefaults> &RJSDefaults(Realm *realm) {
     return static_cast<RJSRealmDelegate *>(realm->m_binding_context.get())->m_defaults;
->>>>>>> a0145df5e4f514dbf213399b43f54266a4abb9ac:src/js_realm.cpp
 }
 
 std::map<std::string, JSValueRef> &RJSPrototypes(Realm *realm) {
@@ -238,12 +176,6 @@ JSObjectRef RealmConstructor(JSContextRef ctx, JSObjectRef constructor, size_t a
                 *jsException = RJSMakeError(ctx, "Invalid arguments when constructing 'Realm'");
                 return NULL;
         }
-<<<<<<< HEAD:src/RJSRealm.mm
-        SharedRealm realm = Realm::get_shared_realm(config);
-        if (!realm->m_delegate) {
-            realm->m_delegate = std::make_unique<RJSRealmDelegate>();
-        }
-=======
         ensure_directory_exists_for_file(config.path);
         SharedRealm realm = Realm::get_shared_realm(config);
         if (!realm->m_binding_context) {
@@ -251,7 +183,6 @@ JSObjectRef RealmConstructor(JSContextRef ctx, JSObjectRef constructor, size_t a
         }
         RJSDefaults(realm.get()) = defaults;
         RJSPrototypes(realm.get()) = prototypes;
->>>>>>> a0145df5e4f514dbf213399b43f54266a4abb9ac:src/js_realm.cpp
         return RJSWrapObject<SharedRealm *>(ctx, RJSRealmClass(), new SharedRealm(realm));
     }
     catch (std::exception &ex) {
@@ -462,20 +393,12 @@ JSValueRef RealmWrite(JSContextRef ctx, JSObjectRef function, JSObjectRef thisOb
     return NULL;
 }
 
-<<<<<<< HEAD:src/RJSRealm.mm
-namespace realm {
-    struct Notification {
-        JSGlobalContextRef ctx;
-        RJSRealmDelegate::NotificationFunction func;
-    };
-=======
 std::string RJSValidatedNotificationName(JSContextRef ctx, JSValueRef value) {
     std::string name = RJSValidatedStringForValue(ctx, value);
     if (name != "change") {
         throw std::runtime_error("Only the 'change' notification name is supported.");
     }
     return name;
->>>>>>> a0145df5e4f514dbf213399b43f54266a4abb9ac:src/js_realm.cpp
 }
 
 JSValueRef RealmAddListener(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* jsException) {
@@ -485,25 +408,8 @@ JSValueRef RealmAddListener(JSContextRef ctx, JSObjectRef function, JSObjectRef 
         JSObjectRef callback = RJSValidatedValueToFunction(ctx, arguments[1]);
 
         SharedRealm realm = *RJSGetInternal<SharedRealm *>(thisObject);
-<<<<<<< HEAD:src/RJSRealm.mm
-        JSGlobalContextRef gCtx = JSGlobalContextRetain(JSContextGetGlobalContext(ctx));
-        RJSRealmDelegate::NotificationFunction func = std::make_shared<std::function<void(const std::string)>>([=](std::string notification_name) {
-            JSValueRef arguments[2];
-            arguments[0] = thisObject;
-            arguments[1] = RJSValueForString(gCtx, notification_name);
-            JSValueRef ex = NULL;
-            JSObjectCallAsFunction(gCtx, user_function, thisObject, 2, arguments, &ex);
-            if (ex) {
-                throw RJSException(gCtx, ex);
-            }
-        });
-
-        static_cast<RJSRealmDelegate *>(realm->m_delegate.get())->add_notification(func);
-        return RJSWrapObject<Notification *>(ctx, RJSNotificationClass(), new Notification { gCtx, func });
-=======
         static_cast<RJSRealmDelegate *>(realm->m_binding_context.get())->add_notification(callback);
         return NULL;
->>>>>>> a0145df5e4f514dbf213399b43f54266a4abb9ac:src/js_realm.cpp
     }
     catch (std::exception &exp) {
         if (jsException) {

@@ -19,9 +19,9 @@ var prompt = require('prompt');
 prompt.start();
 
 prompt.get(['name', 'id'], function (err, result) {
-if (err) { return onErr(err); }
-	console.log('Inserting into Realm:');
-	console.log('  name: ' + result.name);
+    if (err) { return onErr(err); }
+    console.log('Inserting into Realm:');
+    console.log('  name: ' + result.name);
 	console.log('  id: ' +   result.id);
 
 	realm.write(function() {

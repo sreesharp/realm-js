@@ -9,7 +9,7 @@
 
 #include "shared_realm.hpp"
 #include "object_accessor.hpp"
-#include "realm_delegate.hpp"
+#include "binding_context.hpp"
 
 #include <set>
 
@@ -17,7 +17,7 @@ using namespace v8;
 
 
 // FIXME: should be removed
-class RJSRealmDelegate : public realm::RealmDelegate {
+class RJSRealmDelegate : public realm::BindingContext {
 public:
     typedef std::shared_ptr<std::function<void(const std::string)>> NotificationFunction;
     void add_notification(NotificationFunction &notification) { m_notifications.insert(notification); }
@@ -46,6 +46,15 @@ public:
                              std::vector<void*> const& invalidated) {
 
     }
+
+    RJSRealmDelegate(realm::WeakRealm realm, Isolate* ctx) : m_realm(realm), m_context(ctx) {};
+
+    // FIXME: implement!
+    ~RJSRealmDelegate() {};
+
+private:
+    realm::WeakRealm m_realm;
+    Isolate* m_context;
 };
 
 Persistent<Function> RealmIO::constructor;
@@ -162,6 +171,8 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
             switch (args.Length()) {
             case 0:
                 config.path = writeablePathForFile("default.realm");
+                config.schema_version = 0;
+                config.schema = nullptr;
                 break;
             case 1:
                 if (args[0]->IsStringObject()) {
@@ -173,7 +184,7 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
 
                     Local<Value> version = configValue->Get(String::NewFromUtf8(iso, "schemaVersion"));
                     if (version->IsUndefined()) {
-                        config.schema_version = r->schemaVersion;
+                        config.schema_version = 0; // default value
                     }
                     else {
                         config.schema_version = static_cast<uint64_t>(version->IntegerValue());
@@ -198,13 +209,16 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
                         }
                     }
                 }
+                else {
+                    makeError(iso, "Provide either path or configuration");
+                }
                 break;
             default:
                 makeError(iso, "invalid arguments.");
             }
             realm::SharedRealm realm = realm::Realm::get_shared_realm(config);
-            if (!realm->m_delegate) {
-                realm->m_delegate = std::make_unique<RJSRealmDelegate>();
+            if (!realm->m_binding_context) {
+                realm->m_binding_context = std::make_unique<RJSRealmDelegate>(realm, iso);
             }
 
             r->path = config.path;
@@ -272,7 +286,7 @@ void RealmIO::Delete(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
             RealmIO *realm = ObjectWrap::Unwrap<RealmIO>(args.This());
             realm::SharedRealm r = realm->realm;
-            
+
             if (r->is_in_transaction()) {
                 throw std::runtime_error("Can only delete objects within a transaction.");
             }
@@ -313,7 +327,7 @@ void RealmIO::DeleteAll(const v8::FunctionCallbackInfo<v8::Value>& args) {
             for (auto objectSchema : *r->config().schema) {
                 realm::ObjectStore::table_for_object_type(r->read_group(), objectSchema.name)->clear();
             }
-        } 
+        }
     } catch (std::exception &ex) {
         makeError(isolate, ex);
     }
@@ -338,5 +352,5 @@ void RealmIO::Write(const v8::FunctionCallbackInfo<v8::Value>& args) {
             realm->realm->commit_transaction();
         }
     }
-    args.GetReturnValue().SetUndefined(); 
+    args.GetReturnValue().SetUndefined();
 }

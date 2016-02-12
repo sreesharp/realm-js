@@ -23,7 +23,7 @@ void RealmResults::Init(Handle<Object> exports) {
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
     // Methods
-    NODE_SET_PROTOTYPE_METHOD(tpl, "sortByProperty",     RealmResults::SortByProperty);
+    //NODE_SET_PROTOTYPE_METHOD(tpl, "sortByProperty",     RealmResults::SortByProperty);
 
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "RealmResults"), tpl->GetFunction());
@@ -36,7 +36,7 @@ void RealmResults::Get(uint32_t index, const v8::PropertyCallbackInfo<v8::Value>
 
     EscapableHandleScope handle_scope(isolate);
 
-    realm::Object *obj =  new realm::Object(results->m_results.realm, results->m_results.object_schema, results->m_results.get(index));
+    realm::Object *obj =  new realm::Object(results->m_results.get_realm(), results->m_results.get_object_schema(), results->m_results.get(index));
     info.GetReturnValue().Set(RealmObject::Create(obj));
 }
 
@@ -56,7 +56,8 @@ void RealmResults::New(const FunctionCallbackInfo<Value>& args) {
     result->SetIndexedPropertyHandler(RealmResults::Get);
 
 }
-
+// FIXME: return a new RealmResults
+/*
 void RealmResults::SortByProperty(const v8::FunctionCallbackInfo<v8::Value>& args) {
     RealmResults *results = ObjectWrap::Unwrap<RealmResults>(args.This());
 
@@ -68,10 +69,10 @@ void RealmResults::SortByProperty(const v8::FunctionCallbackInfo<v8::Value>& arg
     }
 
     std::string propName = ToString(args[0]);
-    realm::Property *prop = results->m_results.object_schema.property_for_name(propName);
+    realm::Property *prop = results->m_results.get_object_schema().property_for_name(propName);
     if (!prop) {
-        makeError(isolate, "Property '" + propName + "' does not exist on object type '" + 
-            results->m_results.object_schema.name + "'");
+        makeError(isolate, "Property '" + propName + "' does not exist on object type '" +
+            results->m_results.get_object_schema().name + "'");
         return;
     }
 
@@ -83,3 +84,4 @@ void RealmResults::SortByProperty(const v8::FunctionCallbackInfo<v8::Value>& arg
     realm::SortOrder sort = {{prop->table_column}, {ascending}};
     results->m_results.setSort(sort);
 }
+*/

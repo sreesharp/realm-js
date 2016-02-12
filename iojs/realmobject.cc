@@ -51,33 +51,33 @@ void RealmObject::Get(v8::Local<v8::String> name,
     HandleScope scope(isolate);
 
     realm::Object *object = GetObject(info.Holder());
-    realm::Property *prop = object->object_schema.property_for_name(ToString(name));
+    const realm::Property *prop = object->get_object_schema().property_for_name(ToString(name));
     if (!prop) {
         return;
     }
 
     switch (prop->type) {
         case realm::PropertyTypeBool:
-            info.GetReturnValue().Set(v8::Boolean::New(isolate, object->row.get_bool(prop->table_column)));
+            info.GetReturnValue().Set(v8::Boolean::New(isolate, object->row().get_bool(prop->table_column)));
             break;
         case realm::PropertyTypeInt:
-            info.GetReturnValue().Set(v8::Integer::New(isolate, object->row.get_int(prop->table_column)));
+            info.GetReturnValue().Set(v8::Integer::New(isolate, object->row().get_int(prop->table_column)));
             break;
         case realm::PropertyTypeFloat:
-            info.GetReturnValue().Set(v8::Number::New(isolate, object->row.get_float(prop->table_column)));
+            info.GetReturnValue().Set(v8::Number::New(isolate, object->row().get_float(prop->table_column)));
             break;
         case realm::PropertyTypeDouble:
-            info.GetReturnValue().Set(v8::Number::New(isolate, object->row.get_double(prop->table_column)));
+            info.GetReturnValue().Set(v8::Number::New(isolate, object->row().get_double(prop->table_column)));
             break;
         case realm::PropertyTypeString:
-            info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, static_cast<std::string>(object->row.get_string(prop->table_column)).c_str()));
+            info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, static_cast<std::string>(object->row().get_string(prop->table_column)).c_str()));
             break;
         case realm::PropertyTypeDate: {
-            info.GetReturnValue().Set(v8::Date::New(isolate, object->row.get_datetime(prop->table_column).get_datetime()));
+            info.GetReturnValue().Set(v8::Date::New(isolate, object->row().get_datetime(prop->table_column).get_datetime()));
             break;
         }
         case realm::PropertyTypeData:
-            info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, static_cast<std::string>(object->row.get_binary(prop->table_column)).c_str()));
+            info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, static_cast<std::string>(object->row().get_binary(prop->table_column)).c_str()));
             break;
             /*
         case realm::PropertyTypeAny:
@@ -137,12 +137,12 @@ template<> ValueType Accessor::dict_value_for_key(NullType ctx, ValueType dict, 
     return dict->ToObject()->Get(ToString(Isolate::GetCurrent(), prop_name.c_str()));
 }
 
-template<> bool Accessor::has_default_value_for_property(NullType ctx, const ObjectSchema &object_schema, const std::string &prop_name) {
+template<> bool Accessor::has_default_value_for_property(NullType ctx, Realm *realm, const ObjectSchema &object_schema, const std::string &prop_name) {
     ObjectDefaults &defaults = RealmSchema::DefaultsForClassName(object_schema.name);
     return defaults.find(prop_name) != defaults.end();
 }
 
-template<> ValueType Accessor::default_value_for_property(NullType ctx, const ObjectSchema &object_schema, const std::string &prop_name) {
+template<> ValueType Accessor::default_value_for_property(NullType ctx, Realm *realm, const ObjectSchema &object_schema, const std::string &prop_name) {
     ObjectDefaults &defaults = RealmSchema::DefaultsForClassName(object_schema.name);
     return defaults[prop_name];
 }
@@ -182,25 +182,23 @@ template<> DateTime Accessor::to_datetime(NullType ctx, ValueType &val) {
     return DateTime(funcResult->ToInteger()->Value());
 }
 
-template<> size_t Accessor::to_object_index(NullType ctx, SharedRealm &realm, ValueType &val, std::string &type, bool try_update) {
+template<> size_t Accessor::to_object_index(NullType ctx, SharedRealm realm, ValueType &val, const std::string &type, bool try_update) {
     if (val->IsObject() && val->ToObject()->InternalFieldCount() > 0) {
-        RealmObject::GetObject(val->ToObject())->row.get_index();
+        RealmObject::GetObject(val->ToObject())->row().get_index();
     }
 
     auto object_schema = realm->config().schema->find(type);
     Object child = Object::create<ValueType>(ctx, realm, *object_schema, val, try_update);
-    return child.row.get_index();
+    return child.row().get_index();
 }
 
-template<> size_t Accessor::array_size(NullType ctx, ValueType &val) {
+template<> size_t Accessor::list_size(NullType ctx, ValueType &val) {
     return ValidatedArrayLength(*val);
 }
 
-template<> ValueType Accessor::array_value_at_index(NullType ctx, ValueType &val, size_t index) {
+template<> ValueType Accessor::list_value_at_index(NullType ctx, ValueType &val, size_t index) {
     v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(val);
     return array->Get(index);
 }
 
 } // namespace realm
-
-
