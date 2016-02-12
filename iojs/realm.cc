@@ -168,6 +168,7 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
             RealmIO* r = new RealmIO();
             realm::Realm::Config config;
             config.cache = false;
+            config.read_only = false;
             switch (args.Length()) {
             case 0:
                 config.path = writeablePathForFile("default.realm");

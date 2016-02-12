@@ -32,7 +32,6 @@
 		0290483B1C042EE200ABDED4 /* RealmJS.h in Headers */ = {isa = PBXBuildFile; fileRef = 0290483A1C042EE200ABDED4 /* RealmJS.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0291DBD21BD994F700E3852C /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02B58CCD1AE99D4D009B348C /* JavaScriptCore.framework */; };
 		029445941BDEDF40006D1617 /* transact_log_handler.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 029445921BDEDF40006D1617 /* transact_log_handler.hpp */; };
-		029445981BDEDF46006D1617 /* external_commit_helper.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 029445961BDEDF46006D1617 /* external_commit_helper.hpp */; };
 		0294465F1BF27DE6006D1617 /* query_builder.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 0294465D1BF27DE6006D1617 /* query_builder.hpp */; };
 		02B58CCE1AE99D4D009B348C /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02B58CCD1AE99D4D009B348C /* JavaScriptCore.framework */; };
 		02C0864F1BCDB27000942F9C /* list.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 02C0864D1BCDB27000942F9C /* list.hpp */; };
@@ -40,6 +39,8 @@
 		02D8D1F71B601984006DB49D /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02B58CCD1AE99D4D009B348C /* JavaScriptCore.framework */; };
 		02EF76861BFFDE37000D5BAD /* test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02EF76851BFFDE37000D5BAD /* test.cpp */; };
 		02EF76881BFFDE9E000D5BAD /* GrammarTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 02EF76871BFFDE9E000D5BAD /* GrammarTests.mm */; };
+		42A14C811C6CB56300B3BB46 /* external_commit_helper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 42A14C7F1C6CB56300B3BB46 /* external_commit_helper.cpp */; };
+		42A14C821C6CB56300B3BB46 /* external_commit_helper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 42A14C7F1C6CB56300B3BB46 /* external_commit_helper.cpp */; };
 		F61378791C18EAC5008BFC51 /* lib in Resources */ = {isa = PBXBuildFile; fileRef = F61378781C18EAAC008BFC51 /* lib */; };
 		F636F6C81BCDB3570023F35C /* RealmReact.h in Headers */ = {isa = PBXBuildFile; fileRef = 0270BCCF1B7D067300010E03 /* RealmReact.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F63FF2C61C12469E00B3B8E0 /* js_init.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 029048011C0428DF00ABDED4 /* js_init.cpp */; };
@@ -58,7 +59,6 @@
 		F63FF2D31C12469E00B3B8E0 /* list.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02C0864C1BCDB27000942F9C /* list.cpp */; };
 		F63FF2D41C12469E00B3B8E0 /* schema.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02601F0B1BA0F3A7007C91FF /* schema.cpp */; };
 		F63FF2D51C12469E00B3B8E0 /* transact_log_handler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 029445911BDEDF40006D1617 /* transact_log_handler.cpp */; };
-		F63FF2D61C12469E00B3B8E0 /* external_commit_helper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 029445951BDEDF46006D1617 /* external_commit_helper.cpp */; };
 		F63FF2D71C12469E00B3B8E0 /* parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02786E311BF1065000937061 /* parser.cpp */; };
 		F63FF2D81C12469E00B3B8E0 /* query_builder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0294465C1BF27DE6006D1617 /* query_builder.cpp */; };
 		F63FF2DE1C1565EA00B3B8E0 /* RealmJS.mm in Sources */ = {isa = PBXBuildFile; fileRef = F63FF2DC1C15659A00B3B8E0 /* RealmJS.mm */; };
@@ -191,8 +191,6 @@
 		0290483A1C042EE200ABDED4 /* RealmJS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RealmJS.h; sourceTree = "<group>"; };
 		029445911BDEDF40006D1617 /* transact_log_handler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = transact_log_handler.cpp; path = impl/transact_log_handler.cpp; sourceTree = "<group>"; };
 		029445921BDEDF40006D1617 /* transact_log_handler.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = transact_log_handler.hpp; path = impl/transact_log_handler.hpp; sourceTree = "<group>"; };
-		029445951BDEDF46006D1617 /* external_commit_helper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = external_commit_helper.cpp; path = impl/apple/external_commit_helper.cpp; sourceTree = "<group>"; };
-		029445961BDEDF46006D1617 /* external_commit_helper.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = external_commit_helper.hpp; path = impl/apple/external_commit_helper.hpp; sourceTree = "<group>"; };
 		0294465C1BF27DE6006D1617 /* query_builder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = query_builder.cpp; path = parser/query_builder.cpp; sourceTree = "<group>"; };
 		0294465D1BF27DE6006D1617 /* query_builder.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = query_builder.hpp; path = parser/query_builder.hpp; sourceTree = "<group>"; };
 		02A3C7A41BC4341500B1A7BE /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
@@ -205,6 +203,8 @@
 		02D0F23A1BF6C95200B4FC45 /* binding_context.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = binding_context.hpp; sourceTree = "<group>"; };
 		02EF76851BFFDE37000D5BAD /* test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test.cpp; path = "src/object-store/parser/test.cpp"; sourceTree = SOURCE_ROOT; };
 		02EF76871BFFDE9E000D5BAD /* GrammarTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = GrammarTests.mm; path = ios/GrammarTests.mm; sourceTree = "<group>"; };
+		42A14C7F1C6CB56300B3BB46 /* external_commit_helper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = external_commit_helper.cpp; path = impl/apple/external_commit_helper.cpp; sourceTree = "<group>"; };
+		42A14C801C6CB56300B3BB46 /* external_commit_helper.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = external_commit_helper.hpp; path = impl/apple/external_commit_helper.hpp; sourceTree = "<group>"; };
 		F61378781C18EAAC008BFC51 /* lib */ = {isa = PBXFileReference; lastKnownFileType = folder; path = lib; sourceTree = "<group>"; };
 		F63FF2B11C1241E500B3B8E0 /* libRealmJS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRealmJS.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		F63FF2DC1C15659A00B3B8E0 /* RealmJS.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = RealmJS.mm; sourceTree = "<group>"; };
@@ -408,6 +408,8 @@
 		F62A35141C18E783004A917D /* Object Store */ = {
 			isa = PBXGroup;
 			children = (
+				42A14C7F1C6CB56300B3BB46 /* external_commit_helper.cpp */,
+				42A14C801C6CB56300B3BB46 /* external_commit_helper.hpp */,
 				0270BC5D1B7CFC1C00010E03 /* object_accessor.hpp */,
 				0270BC5E1B7CFC1C00010E03 /* object_schema.cpp */,
 				0270BC5F1B7CFC1C00010E03 /* object_schema.hpp */,
@@ -427,8 +429,6 @@
 				02601F0C1BA0F3A7007C91FF /* schema.hpp */,
 				029445911BDEDF40006D1617 /* transact_log_handler.cpp */,
 				029445921BDEDF40006D1617 /* transact_log_handler.hpp */,
-				029445951BDEDF46006D1617 /* external_commit_helper.cpp */,
-				029445961BDEDF46006D1617 /* external_commit_helper.hpp */,
 				02786E311BF1065000937061 /* parser.cpp */,
 				02786E321BF1065000937061 /* parser.hpp */,
 				0294465C1BF27DE6006D1617 /* query_builder.cpp */,
@@ -533,7 +533,6 @@
 				F6BB7DF21BF681BC00D0A69E /* base64.hpp in Headers */,
 				029445941BDEDF40006D1617 /* transact_log_handler.hpp in Headers */,
 				0270BC711B7CFC1C00010E03 /* shared_realm.hpp in Headers */,
-				029445981BDEDF46006D1617 /* external_commit_helper.hpp in Headers */,
 				0270BC6A1B7CFC1C00010E03 /* object_schema.hpp in Headers */,
 				02601F091BA0F0CD007C91FF /* index_set.hpp in Headers */,
 				0270BC6D1B7CFC1C00010E03 /* property.hpp in Headers */,
@@ -829,9 +828,9 @@
 				F63FF2D31C12469E00B3B8E0 /* list.cpp in Sources */,
 				F63FF2D41C12469E00B3B8E0 /* schema.cpp in Sources */,
 				F63FF2D51C12469E00B3B8E0 /* transact_log_handler.cpp in Sources */,
-				F63FF2D61C12469E00B3B8E0 /* external_commit_helper.cpp in Sources */,
 				F63FF2D71C12469E00B3B8E0 /* parser.cpp in Sources */,
 				F63FF2D81C12469E00B3B8E0 /* query_builder.cpp in Sources */,
+				42A14C821C6CB56300B3BB46 /* external_commit_helper.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -860,6 +859,7 @@
 				F63FF31B1C1642BB00B3B8E0 /* GCDWebServer.m in Sources */,
 				F63FF31D1C1642BB00B3B8E0 /* GCDWebServerFunctions.m in Sources */,
 				F63FF3251C1642BB00B3B8E0 /* GCDWebServerErrorResponse.m in Sources */,
+				42A14C811C6CB56300B3BB46 /* external_commit_helper.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1396,6 +1396,7 @@
 				029DD9D71BAAF047005AB490 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		02B29A271B7CF7C9008A7E6B /* Build configuration list for PBXNativeTarget "RealmReact" */ = {
 			isa = XCConfigurationList;
