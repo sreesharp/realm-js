@@ -144,15 +144,15 @@ realm::ObjectSchema ParseObjectSchema(Local<Object> jsonObjectSchema) {
     return objectSchema;
 }
 
-Schema RealmSchema::ParseSchema(Value *value) {
+realm::Schema RealmSchema::ParseSchema(Value *value) {
     std::vector<realm::ObjectSchema> schema;
     size_t length = ValidatedArrayLength(value);
     v8::Array *array = v8::Array::Cast(value);
     for (unsigned int i = 0; i < length; i++) {
         Local<Object> jsonObjectSchema = Local<Object>::Cast(array->Get(i));
-        ObjectSchema objectSchema = ParseObjectSchema(jsonObjectSchema);
-        schema.push_back(objectSchema);
+        realm::ObjectSchema objectSchema = ParseObjectSchema(jsonObjectSchema);
+        schema.emplace_back(std::move(objectSchema));
     }
 
-    return Schema(schema);
+    return realm::Schema(schema);
 }

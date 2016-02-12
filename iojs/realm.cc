@@ -198,12 +198,12 @@ void RealmIO::New(const FunctionCallbackInfo<Value>& args) {
 
                     Local<Value> path = configValue->Get(String::NewFromUtf8(iso, "path"));
                     if (path->IsUndefined()) {
-                        config.path = r->defaultPath;
+                        config.path = writeablePathForFile("default.realm");
                     }
                     else {
                         std::string p = ToString(path);
                         if (p == "") {
-                            config.path = r->defaultPath;
+                            config.path = writeablePathForFile("default.realm");
                         }
                         else {
                             config.path = ToString(path);
