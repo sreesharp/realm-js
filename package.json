@@ -1,0 +1,19 @@
+{
+  "name": "realm",
+  "version": "0.0.1",
+  "private": true,
+  "main": "lib/index.js",
+  "files": [
+    "android",
+    "lib",
+    "react-native",
+    "scripts",
+    "src",
+    "vendor",
+    "RealmJS.xcodeproj"
+  ],
+  "scripts": {
+    "test": "scripts/test.sh",
+    "prepublish": "scripts/prepublish.sh"
+  }
+}
