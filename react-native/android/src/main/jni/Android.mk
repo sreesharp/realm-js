@@ -4,6 +4,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := realm-android-$(TARGET_ARCH_ABI)
 LOCAL_EXPORT_C_INCLUDES := core/include
 LOCAL_SRC_FILES := core/librealm-android-$(TARGET_ARCH_ABI).a
+cmd-strip :=
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -51,4 +52,5 @@ LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
 
 LOCAL_STATIC_LIBRARIES := realm-android-$(TARGET_ARCH_ABI)
 LOCAL_SHARED_LIBRARIES := libjsc
+cmd-strip :=
 include $(BUILD_SHARED_LIBRARY)
