@@ -18,11 +18,13 @@
     "setInterval": false,
     "setTimeout": false
   },
+  "parser": "babel-eslint",
   "plugins": [
     "react"
   ],
   "rules": {
     "no-console": 0,
+    "strict": 0,
     "react/jsx-no-duplicate-props": 2,
     "react/jsx-no-undef": 2,
     "react/jsx-uses-react": 2,
