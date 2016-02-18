@@ -32,13 +32,14 @@ module.exports = {
         Realm.clearTestState();
     },
 
-    testAsyncQuery() {
+    async testAsyncQuery() {
         let realm = createRealm();
         let objects = realm.objects('UniqueObject');
+        let results = await new Promise((resolve) => {
+            let ret = objects.filteredSnapshot(resolve, 'id < 5');
+            Asserts.assertTrue(ret == undefined);
+        });
 
-        var ret = objects.filteredSnapshot((results) => {
-            Asserts.assertEqual(results.count, 5);
-        }, 'id < 5');
-        Asserts.assertTrue(ret == undefined);
+        Asserts.assertEqual(results.count, 5);
     },
 };
