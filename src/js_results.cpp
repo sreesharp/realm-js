@@ -141,11 +141,16 @@ JSValueRef ResultsFilteredSnapshot(JSContextRef ctx, JSObjectRef function, JSObj
         RJSValidateArgumentCountIsAtLeast(argumentCount, 2);
         SharedRealm sharedRealm = *RJSGetInternal<SharedRealm *>(thisObject);
         JSObjectRef snapshotObject = RJSResultsCreate(ctx, sharedRealm, results->get_object_schema(), std::move(results->get_query()), argumentCount - 1, arguments);
-        JSValueProtect(ctx, snapshotObject);
+
+        JSGlobalContextRef globalContext = JSContextGetGlobalContext(ctx);
+        JSGlobalContextRetain(globalContext);
+
         Results *snapshotResults = RJSGetInternal<Results *>(snapshotObject);
+        snapshotResults->set_live(false);
         
-        JSObjectRef callback = RJSValidatedValueToFunction(ctx, arguments[argumentCount-1]);
-        JSValueProtect(ctx, callback);
+        JSObjectRef callback = RJSValidatedValueToFunction(ctx, arguments[argumentCount - 1]);
+        JSValueProtect(globalContext, callback);
+        JSValueProtect(globalContext, snapshotObject);
         
         AsyncQueryCancelationToken *tokenPtr = new AsyncQueryCancelationToken;
         *tokenPtr = std::move(snapshotResults->async([=](std::exception_ptr exp) {
@@ -153,10 +158,11 @@ JSValueRef ResultsFilteredSnapshot(JSContextRef ctx, JSObjectRef function, JSObj
                 rethrow_exception(exp);
             }
             else {
-                JSObjectCallAsFunction(ctx, callback, NULL, 1, &snapshotObject, NULL);
+                JSObjectCallAsFunction(globalContext, callback, NULL, 1, &snapshotObject, NULL);
             }
-            JSValueUnprotect(ctx, snapshotObject);
-            JSValueUnprotect(ctx, callback);
+            JSValueUnprotect(globalContext, snapshotObject);
+            JSValueUnprotect(globalContext, callback);
+            JSGlobalContextRelease(globalContext);
             delete tokenPtr;
         }));
         return JSValueMakeUndefined(ctx);
