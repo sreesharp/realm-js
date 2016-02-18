@@ -146,7 +146,6 @@ JSValueRef ResultsFilteredSnapshot(JSContextRef ctx, JSObjectRef function, JSObj
         JSGlobalContextRetain(globalContext);
 
         Results *snapshotResults = RJSGetInternal<Results *>(snapshotObject);
-        snapshotResults->set_live(false);
         
         JSObjectRef callback = RJSValidatedValueToFunction(ctx, arguments[argumentCount - 1]);
         JSValueProtect(globalContext, callback);
@@ -158,6 +157,7 @@ JSValueRef ResultsFilteredSnapshot(JSContextRef ctx, JSObjectRef function, JSObj
                 rethrow_exception(exp);
             }
             else {
+                snapshotResults->set_live(false);
                 JSObjectCallAsFunction(globalContext, callback, NULL, 1, &snapshotObject, NULL);
             }
             JSValueUnprotect(globalContext, snapshotObject);
