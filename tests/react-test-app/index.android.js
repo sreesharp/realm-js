@@ -20,6 +20,7 @@ const {
 
 RealmTests.registerTests({
     ListViewTest: require('./tests/listview-test'),
+    AsyncTest: require('./tests/async-test'),
 });
 
 function runTests() {

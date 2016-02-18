@@ -10,6 +10,7 @@ const RealmTests = require('realm-tests');
 
 RealmTests.registerTests({
     ListViewTest: require('./listview-test'),
+    AsyncTest: require('./async-test'),
 });
 
 const {
