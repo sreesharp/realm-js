@@ -144,11 +144,11 @@ JSValueRef ResultsFilteredSnapshot(JSContextRef ctx, JSObjectRef function, JSObj
         
         RJSValidateArgumentCountIsAtLeast(argumentCount, 2);
         SharedRealm sharedRealm = *RJSGetInternal<SharedRealm *>(thisObject);
-        JSObjectRef snapshotObject = RJSResultsCreateFiltered(ctx, sharedRealm, results->get_object_schema(), std::move(results->get_query()), argumentCount - 1, arguments + 1);
+        JSObjectRef snapshotObject = RJSResultsCreateFiltered(ctx, sharedRealm, results->get_object_schema(), std::move(results->get_query()), argumentCount - 1, arguments);
         JSValueProtect(ctx, snapshotObject);
         Results *snapshotResults = RJSGetInternal<Results *>(snapshotObject);
         
-        JSObjectRef callback = RJSValidatedValueToFunction(ctx, arguments[0]);
+        JSObjectRef callback = RJSValidatedValueToFunction(ctx, arguments[argumentCount - 1]);
         JSValueProtect(ctx, callback);
         
         AsyncQueryCancelationToken *tokenPtr = new AsyncQueryCancelationToken;
