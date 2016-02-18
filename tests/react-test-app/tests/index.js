@@ -37,10 +37,10 @@ module.exports = {
 };
 
 // Listen for event to run a particular test.
-NativeAppEventEmitter.addListener('realm-run-test', (test) => {
+NativeAppEventEmitter.addListener('realm-run-test', async ({suite, name}) => {
     let error;
     try {
-        RealmTests.runTest(test.suite, test.name);
+        await RealmTests.runTest(test.suite, test.name);
     } catch (e) {
         error = '' + e;
     }
