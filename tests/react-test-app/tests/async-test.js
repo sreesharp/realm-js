@@ -35,11 +35,12 @@ module.exports = {
     async testAsyncQuery() {
         let realm = createRealm();
         let objects = realm.objects('UniqueObject');
+
         let results = await new Promise((resolve) => {
             let ret = objects.filteredSnapshot('id < 5', resolve);
             Asserts.assertTrue(ret == undefined);
         });
 
-        Asserts.assertEqual(results.count, 5);
+        Asserts.assertEqual(results.length, 5);
     },
 };
