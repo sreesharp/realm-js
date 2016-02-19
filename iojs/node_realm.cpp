@@ -115,7 +115,7 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
 
                     Local<Value> schemaValue = configValue->Get(ToString(iso, "schema"));
                     if (!schemaValue->IsUndefined()) {
-                        config.schema.reset(new realm::Schema(RealmSchemaWrap::ParseSchema(iso, ValidatedValueToObject(schemaValue), defaults, prototypes)));
+                        config.schema.reset(new realm::Schema(RealmSchemaWrap::ParseSchema(iso, ValidatedValueToObject(iso, schemaValue), defaults, prototypes)));
                     }
 
                     Local<Value> versionValue = configValue->Get(ToString(iso, "schemaVersion"));
@@ -165,7 +165,7 @@ void RealmWrap::CreateObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
             makeError(iso, "Object type '" + class_name + "' not found in schema.");
             return;
         }
-        Local<Object> obj = ValidatedValueToObject(args[1]);
+        Local<Object> obj = ValidatedValueToObject(iso, args[1]);
         if (args[1]->IsArray()) {
             obj = DictForPropertyArray(iso, *object_schema, v8::Local<v8::Array>::Cast(args[1]));
         }

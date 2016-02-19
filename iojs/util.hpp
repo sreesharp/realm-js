@@ -53,7 +53,7 @@ static inline void ValidateArgumentCountIsAtLeast(std::size_t argc, std::size_t 
 }
 
 
-static inline v8::Local<v8::Object> ValidatedValueToObject(v8::Local<v8::Value> value, const char *message = NULL) {
+static inline v8::Local<v8::Object> ValidatedValueToObject(v8::Isolate* ctx, v8::Local<v8::Value> value, const char *message = NULL) {
     v8::Local<v8::Object> object = value->ToObject();
     if (object->IsUndefined()) {
         throw std::runtime_error(message ?: "Value is not an object.");
@@ -86,7 +86,7 @@ static inline bool ValidatedValueToBool(v8::Local<v8::Value> value) {
     return value->BooleanValue();
 }
 
-static inline std::string ValidatedStringForValue(v8::Isolate* ctx, v8::Local<v8::Value> value, const char* name) {
+static inline std::string ValidatedStringForValue(v8::Isolate* ctx, v8::Local<v8::Value> value, const char* name = NULL) {
     if (!value->IsString()) {
         if (name) {
             throw std::invalid_argument((std::string)"'" + name + "' must be of type 'string'");
@@ -99,8 +99,7 @@ static inline std::string ValidatedStringForValue(v8::Isolate* ctx, v8::Local<v8
 }
 
 
-static inline v8::Local<v8::Value> ValidatedPropertyValue(v8::Isolate* ctx, v8::Local<v8::Value> value,
-    v8::Local<v8::String> property) {
+static inline v8::Local<v8::Value> ValidatedPropertyValue(v8::Isolate* ctx, v8::Local<v8::Value> value, v8::Local<v8::String> property) {
     if (value->IsObject()) {
         v8::Local<v8::Object> object = value->ToObject();
         if (object->Has(property)) {
@@ -110,13 +109,20 @@ static inline v8::Local<v8::Value> ValidatedPropertyValue(v8::Isolate* ctx, v8::
     makeError(ctx, std::string("'") + ToString(property) + std::string("' does not exist"));
 }
 
-static inline v8::Local<v8::Value> ValidatedObjectAtIndex(v8::Isolate* ctx, v8::Local<v8::Value> object,
-    unsigned int index) {
-        // FIXME: implement
+static inline v8::Local<v8::Value> ValidatedObjectAtIndex(v8::Isolate* ctx, v8::Local<v8::Value> object, unsigned int index) {
+    if (object->IsObject()) {
+        v8::Local<v8::Value> objectValue = object->ToObject()->Get(index);
+        return objectValue;
+    }
+    throw std::runtime_error("Is not an object");
 }
 
-static inline std::string ValidatedStringProperty(v8::Isolate* ctx, v8::Local<v8::Value> object,
-    v8::Local<v8::String> property) {
+static inline std::string ValidatedStringProperty(v8::Isolate* ctx, v8::Local<v8::Value> object, v8::Local<v8::String> property) {
+    if (object->IsObject()) {
+        v8::Local<v8::Value> propertyValue = object->ToObject()->Get(property);
+        return ToString(propertyValue);
+    }
+    throw std::runtime_error("Is not an object");
 }
 
 template<typename T>

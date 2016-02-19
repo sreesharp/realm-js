@@ -58,84 +58,125 @@ Local<Value> RealmSchemaWrap::PrototypeForClassName(const std::string &className
     return s_prototypes[className];
 }
 
-realm::Property ParseProperty(Isolate* iso, Local<Object> jsonProperty) {
+realm::Property ParseProperty(Isolate* iso, Local<Value> propertyAttributes, std::string propertyName, ObjectDefaults &objectDefaults) {
     realm::Property prop;
 
-    prop.name = ToString(jsonProperty->Get(ToString(iso, "name")));
-    std::string type = ToString(jsonProperty->Get(ToString(iso, "type")));
+    prop.name = propertyName;
 
-    if (type == "RealmTypeBool") {
+    Local<Object> propertyObject;
+    std::string type;
+
+    if (propertyAttributes->IsObject()) {
+        propertyObject = ValidatedValueToObject(iso, propertyAttributes);
+        type = ValidatedStringProperty(iso, propertyObject, ToString(iso, "type"));
+
+        Local<Value> optionalValue = propertyObject->Get(ToString(iso, "optional"));
+        if (!optionalValue->IsUndefined()) {
+            if (!optionalValue->IsBoolean()) {
+                throw std::runtime_error("'optional' designation expected to be of type boolean");
+            }
+            prop.is_nullable = ValidatedValueToBool(optionalValue);
+        }
+    }
+    else {
+        type = ValidatedStringForValue(iso, propertyAttributes);
+    }
+
+    if (type == "bool") {
         prop.type = PropertyTypeBool;
     }
-    else if (type == "RealmTypeInt") {
+    else if (type == "int") {
         prop.type = PropertyTypeInt;
     }
-    else if (type == "RealmTypeFloat") {
+    else if (type == "float") {
         prop.type = PropertyTypeFloat;
     }
-    else if (type == "RealmTypeDouble") {
+    else if (type == "double") {
         prop.type = PropertyTypeDouble;
     }
-    else if (type == "RealmTypeString") {
+    else if (type == "string") {
         prop.type = PropertyTypeString;
     }
-    else if (type == "RealmTypeDate") {
+    else if (type == "date") {
         prop.type = PropertyTypeDate;
     }
-    else if (type == "RealmTypeData") {
+    else if (type == "data") {
         prop.type = PropertyTypeData;
     }
-    else if (type == "RealmTypeObject") {
-        prop.type = PropertyTypeObject;
-        prop.object_type =  ToString(jsonProperty->Get(ToString(iso, "objectType")));
-        prop.is_nullable = true;
-    }
-    else if (type == "RealmTypeArray") {
+    else if (type == "list") {
+        if (propertyObject->IsUndefined() || propertyObject->IsNull()) {
+            throw std::runtime_error("List property must specify 'objectType'");
+        }
         prop.type = PropertyTypeArray;
-        prop.object_type = ToString(jsonProperty->Get(ToString(iso, "objectType")));
+        prop.object_type =  ValidatedStringProperty(iso, propertyObject, ToString(iso, "objectType"));
     }
     else {
         prop.type = PropertyTypeObject;
-        prop.object_type = type;
         prop.is_nullable = true;
+
+        // The type could either be 'object' or the name of another object type in the same schema.
+        if (type == "object") {
+            if (propertyObject->IsUndefined() || propertyObject->IsNull()) {
+                throw std::runtime_error("Object property must specify 'objectType'");
+            }
+            prop.object_type = ValidatedStringProperty(iso, propertyObject, ToString(iso, "objectType"));
+        }
+        else {
+            prop.object_type = type;
+        }
     }
+
+    if (!propertyObject->IsUndefined()) {
+        Local<Value> defaultValue = ValidatedPropertyValue(iso, propertyObject, ToString(iso, "default"));
+        if (!defaultValue->IsUndefined()) {
+            // FIXME: JSValueProtect(ctx, defaultValue)
+            objectDefaults.emplace(prop.name, defaultValue);
+        }
+    }
+
     return prop;
 }
 
-realm::ObjectSchema ParseObjectSchema(Isolate* iso, Local<Object> jsonObjectSchema) {
+realm::ObjectSchema ParseObjectSchema(Isolate* iso, Local<Object> jsonObjectSchema, std::map<std::string, realm::ObjectDefaults> &defaults, std::map<std::string, Local<Value>> &prototypes) {
     Local<Object> prototypeObject;
     Local<Object> objectSchemaObject;
 
-    Local<Value> prototypeValue = jsonObjectSchema->Get(String::NewFromUtf8(iso, "prototype"));
+    Local<Value> prototypeValue = jsonObjectSchema->Get(ToString(iso, "prototype"));
     if (!prototypeValue->IsUndefined()) {
         prototypeObject = prototypeValue->ToObject();
-        objectSchemaObject = prototypeObject->Get(String::NewFromUtf8(iso, "schema"))->ToObject();
+        objectSchemaObject = prototypeObject->Get(ToString(iso, "schema"))->ToObject();
     }
     else {
         objectSchemaObject = jsonObjectSchema->ToObject();
     }
-    Local<Value> propertiesObject = objectSchemaObject->Get(String::NewFromUtf8(iso, "properties"));
 
+    ObjectDefaults objectDefaults;
     ObjectSchema objectSchema;
-    ObjectDefaults defaults;
-    objectSchema.name = *(String::Utf8Value(objectSchemaObject->Get(String::NewFromUtf8(iso, "name"))->ToString()));
+    objectSchema.name = *(String::Utf8Value(objectSchemaObject->Get(ToString(iso, "name"))->ToString()));
 
-    size_t numProperties = ValidatedArrayLength(*propertiesObject);
-    v8::Array *properties = v8::Array::Cast(*propertiesObject);
-    for (unsigned int p = 0; p < numProperties; p++) {
-        Local<Object> property = Local<Object>::Cast(properties->Get(p));
-        objectSchema.properties.emplace_back(ParseProperty(iso, property));
-
-        Local<Value> defaultValue = property->Get(String::NewFromUtf8(iso, "default"));
-        if (!defaultValue->IsUndefined()) {
-            defaults.emplace(objectSchema.properties.back().name, defaultValue);
+    Local<Value> propertiesObject = objectSchemaObject->Get(ToString(iso, "properties"));
+    if (propertiesObject->IsArray()) {
+        v8::Array *properties = v8::Array::Cast(*propertiesObject);
+        size_t numProperties = properties->Length();
+        for (unsigned int i = 0; i < numProperties; i++) {
+            Local<Object> propertyObject = Local<Object>::Cast(properties->Get(i));
+            std::string propertyName = ValidatedStringProperty(iso, propertyObject, ToString(iso, "name"));
+            objectSchema.properties.emplace_back(ParseProperty(iso, propertyObject, propertyName, objectDefaults));
         }
     }
-    s_defaults.emplace(objectSchema.name, std::move(defaults));
+    else {
+        Local<v8::Array> propertyNames = propertiesObject->ToObject()->GetPropertyNames();
+        size_t propertyCount = propertyNames->Length();
+        for (size_t i = 0; i < propertyCount; i++) {
+            Local<Value> propertyName = propertyNames->Get(i);
+            Local<Value> propertyValue = ValidatedPropertyValue(iso, propertiesObject, propertyName->ToString());
+            objectSchema.properties.emplace_back(ParseProperty(iso, propertyValue, ToString(propertyName), objectDefaults));
+        }
+    }
 
-    Local<Value> primaryValue = objectSchemaObject->Get(String::NewFromUtf8(iso, "primaryKey"));
+    Local<Value> primaryValue = objectSchemaObject->Get(ToString(iso, "primaryKey"));
     if (!primaryValue->IsUndefined()) {
-        objectSchema.primary_key = *(String::Utf8Value(primaryValue->ToString()));
+        objectSchema.primary_key = ToString(primaryValue->ToString());
         Property *property = objectSchema.primary_key_property();
         if (!property) {
             throw std::runtime_error("Missing primary key property '" + objectSchema.primary_key + "'");
@@ -148,6 +189,8 @@ realm::ObjectSchema ParseObjectSchema(Isolate* iso, Local<Object> jsonObjectSche
         s_prototypes[objectSchema.name] = std::move(prototypeObject);
     }
 
+    defaults.emplace(objectSchema.name, std::move(objectDefaults));
+
     return objectSchema;
 }
 
@@ -157,8 +200,8 @@ realm::Schema RealmSchemaWrap::ParseSchema(Isolate* iso, Local<Value> value, std
     v8::Array *array = v8::Array::Cast(*value);
     for (unsigned int i = 0; i < length; i++) {
         Local<Object> jsonObjectSchema = Local<Object>::Cast(array->Get(i));
-        ObjectSchema objectSchema = ParseObjectSchema(iso, jsonObjectSchema);
-        schema.push_back(objectSchema);
+        ObjectSchema objectSchema = ParseObjectSchema(iso, jsonObjectSchema, defaults, prototypes);
+        schema.emplace_back(std::move(objectSchema));
     }
 
     return realm::Schema(schema);

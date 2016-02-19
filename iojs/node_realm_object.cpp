@@ -88,12 +88,12 @@ realm::Object *RealmObjectWrap::GetObject(Local<Object> self) {
 namespace realm {
 
 template<> bool Accessor::dict_has_value_for_key(IsolateType ctx, ValueType dict, const std::string &prop_name) {
-    Local<v8::Object> object = ValidatedValueToObject(dict);
+    Local<v8::Object> object = ValidatedValueToObject(ctx, dict);
     return object->Has(ToString(ctx, prop_name.c_str()));
 }
 
 template<> ValueType Accessor::dict_value_for_key(IsolateType ctx, ValueType dict, const std::string &prop_name) {
-    Local<v8::Object> object = ValidatedValueToObject(dict);
+    Local<v8::Object> object = ValidatedValueToObject(ctx, dict);
     return dict->ToObject()->Get(ToString(ctx, prop_name.c_str()));
 }
 
