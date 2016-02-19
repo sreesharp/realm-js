@@ -25,7 +25,7 @@ public:
     static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
 
     // Utility methods
-    static realm::Schema ParseSchema(v8::Isolate* iso, v8::Value *value);
+    static realm::Schema ParseSchema(v8::Isolate* iso, v8::Local<v8::Value> value, std::map<std::string, realm::ObjectDefaults> &defaults, std::map<std::string, v8::Local<v8::Value>> &prototypes);
     static v8::Local<v8::Value> PrototypeForClassName(const std::string &className);
     static realm::ObjectDefaults &DefaultsForClassName(const std::string &className);
 

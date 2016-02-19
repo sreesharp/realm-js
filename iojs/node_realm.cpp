@@ -13,6 +13,7 @@
 #include "schema.hpp"
 
 #include "node_realm_object.hpp"
+#include "node_realm_schema.hpp"
 #include "util.hpp"
 
 #include <set>
@@ -84,6 +85,8 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
         try {
             RealmWrap* rw = new RealmWrap();
             realm::Realm::Config config;
+            std::map<std::string, realm::ObjectDefaults> defaults;
+            std::map<std::string, Local<Value>> prototypes;
             config.cache = false;
             switch (args.Length()) {
             case 0:
@@ -96,7 +99,7 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
                 else if (args[0]->IsObject()) {
                     Local<Object> configValue = args[0]->ToObject();
 
-                    Local<Value> path = configValue->Get(String::NewFromUtf8(iso, "path"));
+                    Local<Value> path = configValue->Get(ToString(iso, "path"));
                     if (path->IsUndefined()) {
                         config.path = s_defaultPath;
                     }
@@ -109,15 +112,31 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
                             config.path = p;
                         }
                     }
+
+                    Local<Value> schemaValue = configValue->Get(ToString(iso, "schema"));
+                    if (!schemaValue->IsUndefined()) {
+                        config.schema.reset(new realm::Schema(RealmSchemaWrap::ParseSchema(iso, ValidatedValueToObject(schemaValue), defaults, prototypes)));
+                    }
+
+                    Local<Value> versionValue = configValue->Get(ToString(iso, "schemaVersion"));
+                    if (schemaValue->IsUndefined()) {
+                        config.schema_version = 0;
+                    }
+                    else {
+                        config.schema_version = ValidatedValueToNumber(iso, versionValue);
+                    }
                 }
                 break;
             default:
                 makeError(iso, "invalid arguments.");
             }
+            // FIXME: ensure_directory_exists_for_file(config.path);
             realm::SharedRealm realm = realm::Realm::get_shared_realm(config);
             if (!realm->m_binding_context) {
                 realm->m_binding_context.reset(new NodeRealmDelegate(realm, iso));
             }
+            // FIXME: save defaults
+            // FIXME: save prototypes
 
             rw->m_realm = realm;
             rw->Wrap(args.This());

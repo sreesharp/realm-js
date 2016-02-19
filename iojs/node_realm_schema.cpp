@@ -151,10 +151,10 @@ realm::ObjectSchema ParseObjectSchema(Isolate* iso, Local<Object> jsonObjectSche
     return objectSchema;
 }
 
-realm::Schema RealmSchemaWrap::ParseSchema(Isolate* iso, Value *value) {
+realm::Schema RealmSchemaWrap::ParseSchema(Isolate* iso, Local<Value> value, std::map<std::string, realm::ObjectDefaults> &defaults, std::map<std::string, Local<Value>> &prototypes) {
     std::vector<realm::ObjectSchema> schema;
-    size_t length = ValidatedArrayLength(value);
-    v8::Array *array = v8::Array::Cast(value);
+    size_t length = ValidatedArrayLength(*value);
+    v8::Array *array = v8::Array::Cast(*value);
     for (unsigned int i = 0; i < length; i++) {
         Local<Object> jsonObjectSchema = Local<Object>::Cast(array->Get(i));
         ObjectSchema objectSchema = ParseObjectSchema(iso, jsonObjectSchema);
