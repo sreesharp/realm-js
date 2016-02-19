@@ -154,7 +154,7 @@ JSValueRef ResultsFilteredSnapshot(JSContextRef ctx, JSObjectRef function, JSObj
         AsyncQueryCancelationToken *tokenPtr = new AsyncQueryCancelationToken;
         *tokenPtr = std::move(snapshotResults->async([=](std::exception_ptr exp) {
             if (exp) {
-                rethrow_exception(exp);
+                std::rethrow_exception(exp);
             }
             else {
                 snapshotResults->set_live(false);
