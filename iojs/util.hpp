@@ -52,7 +52,6 @@ static inline void ValidateArgumentCountIsAtLeast(std::size_t argc, std::size_t 
     }
 }
 
-
 static inline v8::Local<v8::Object> ValidatedValueToObject(v8::Isolate* ctx, v8::Local<v8::Value> value, const char *message = NULL) {
     v8::Local<v8::Object> object = value->ToObject();
     if (object->IsUndefined()) {
@@ -79,9 +78,14 @@ static inline double ValidatedValueToNumber(v8::Isolate* ctx, v8::Local<v8::Valu
     return value->NumberValue();
 }
 
-static inline bool ValidatedValueToBool(v8::Local<v8::Value> value) {
+static inline bool ValidatedValueToBool(v8::Local<v8::Value> value, const char* err = NULL) {
     if (!value->IsBoolean()) {
-        throw std::runtime_error("Value is not a boolean.");
+        if (err) {
+            throw std::runtime_error(err);
+        }
+        else {
+            throw std::runtime_error("Value is not a boolean.");
+        }
     }
     return value->BooleanValue();
 }
@@ -109,12 +113,12 @@ static inline v8::Local<v8::Value> ValidatedPropertyValue(v8::Isolate* ctx, v8::
     makeError(ctx, std::string("'") + ToString(property) + std::string("' does not exist"));
 }
 
-static inline v8::Local<v8::Value> ValidatedObjectAtIndex(v8::Isolate* ctx, v8::Local<v8::Value> object, unsigned int index) {
-    if (object->IsObject()) {
-        v8::Local<v8::Value> objectValue = object->ToObject()->Get(index);
-        return objectValue;
+static inline v8::Local<v8::Object> ValidatedObjectProperty(v8::Isolate* ctx, v8::Local<v8::Object> object, v8::Local<v8::String> property, const char* err = NULL) {
+    v8::Local<v8::Value> propertyValue = ValidatedPropertyValue(ctx, object, property);
+    if (propertyValue->IsUndefined()) {
+        throw std::runtime_error(err ?: "Object property '" + ToString(property) + "' is undefined");
     }
-    throw std::runtime_error("Is not an object");
+    return ValidatedValueToObject(ctx, propertyValue, err);
 }
 
 static inline std::string ValidatedStringProperty(v8::Isolate* ctx, v8::Local<v8::Value> object, v8::Local<v8::String> property) {

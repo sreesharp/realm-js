@@ -57,7 +57,7 @@ private:
 };
 
 
-static std::string s_defaultPath = "default.realm";
+static std::string s_defaultPath = "/tmp/default.realm";
 
 Persistent<Function> RealmWrap::constructor;
 RealmWrap::RealmWrap() {}
@@ -87,7 +87,6 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
             realm::Realm::Config config;
             std::map<std::string, realm::ObjectDefaults> defaults;
             std::map<std::string, Local<Value>> prototypes;
-            config.cache = false;
             switch (args.Length()) {
             case 0:
                 config.path = s_defaultPath;
@@ -99,11 +98,8 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
                 else if (args[0]->IsObject()) {
                     Local<Object> configValue = args[0]->ToObject();
 
-                    Local<Value> path = configValue->Get(ToString(iso, "path"));
-                    if (path->IsUndefined()) {
-                        config.path = s_defaultPath;
-                    }
-                    else {
+                    if (configValue->Has(ToString(iso, "path"))) {
+                        Local<Value> path = configValue->Get(ToString(iso, "path"));
                         std::string p = ToString(path);
                         if (p == "") {
                             config.path = s_defaultPath;
@@ -112,18 +108,31 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
                             config.path = p;
                         }
                     }
-
-                    Local<Value> schemaValue = configValue->Get(ToString(iso, "schema"));
-                    if (!schemaValue->IsUndefined()) {
-                        config.schema.reset(new realm::Schema(RealmSchemaWrap::ParseSchema(iso, ValidatedValueToObject(iso, schemaValue), defaults, prototypes)));
+                    else {
+                        config.path = s_defaultPath;
                     }
 
-                    Local<Value> versionValue = configValue->Get(ToString(iso, "schemaVersion"));
-                    if (schemaValue->IsUndefined()) {
-                        config.schema_version = 0;
+                    if (configValue->Has(ToString(iso, "schema"))) {
+                        Local<Value> schemaValue = configValue->Get(ToString(iso, "schema"));
+                        if (schemaValue->IsObject()) {
+                            config.schema.reset(new realm::Schema(RealmSchemaWrap::ParseSchema(iso, schemaValue->ToObject(), defaults, prototypes)));
+                        }
+                        else {
+                            throw new std::runtime_error("Property 'schema' expected to be an object.");
+                        }
+                    }
+
+                    if (configValue->Has(ToString(iso, "schemaVersion"))) {
+                        Local<Value> versionValue = configValue->Get(ToString(iso, "schemaVersion"));
+                        if (versionValue->IsNumber()) {
+                            config.schema_version = versionValue->NumberValue();
+                        }
+                        else {
+                            throw new std::runtime_error("Property 'schemaVersion' expected to be a number.");
+                        }
                     }
                     else {
-                        config.schema_version = ValidatedValueToNumber(iso, versionValue);
+                        config.schema_version = 0;
                     }
                 }
                 break;
