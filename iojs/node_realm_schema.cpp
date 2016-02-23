@@ -14,6 +14,7 @@ using namespace v8;
 using namespace realm;
 
 Persistent<Function> RealmSchemaWrap::constructor;
+
 RealmSchemaWrap::RealmSchemaWrap() {}
 RealmSchemaWrap::~RealmSchemaWrap() {}
 
@@ -46,16 +47,6 @@ void RealmSchemaWrap::New(const FunctionCallbackInfo<Value>& args) {
     } else {
         // FIXME: Invoked as plain function `RealmSchema(...)`, turn into construct call.
     }
-}
-
-static std::map<std::string, ObjectDefaults> s_defaults;
-ObjectDefaults &RealmSchemaWrap::DefaultsForClassName(const std::string &className) {
-    return s_defaults[className];
-}
-
-static std::map<std::string, Local<Value>> s_prototypes;
-Local<Value> RealmSchemaWrap::PrototypeForClassName(const std::string &className) {
-    return s_prototypes[className];
 }
 
 realm::Property ParseProperty(Isolate* iso, Local<Value> propertyAttributes, std::string propertyName, ObjectDefaults &objectDefaults) {
@@ -135,9 +126,11 @@ realm::Property ParseProperty(Isolate* iso, Local<Value> propertyAttributes, std
     }
 
     if (!propertyObject->IsUndefined() || !propertyObject->IsNull()) {
-        Local<Value> defaultValue = propertyObject->Get(ToString(iso, "default"));
-        if (!defaultValue->IsUndefined()) {
+        if (propertyObject->Has(ToString(iso, "default"))) {
+            Local<Value> defaultValue = propertyObject->Get(ToString(iso, "default"));
             // FIXME: JSValueProtect(ctx, defaultValue)
+            Persistent<Value> p_object;
+            p_object.Reset(iso, defaultValue);
             objectDefaults.emplace(prop.name, defaultValue);
         }
     }
@@ -173,12 +166,12 @@ realm::ObjectSchema ParseObjectSchema(Isolate* iso, Local<Object> objectSchemaOb
     if (!objectSchemaObject->Has(ToString(iso, "properties"))) {
         throw new std::runtime_error("ObjectSchema must have a 'properties' object.");
     }
-    Local<Object> propertiesObject = objectSchemaObject->Get(ToString(iso, "properties"))->ToObject();
+    Local<Value> propertiesObject = objectSchemaObject->Get(ToString(iso, "properties"));
     if (propertiesObject->IsArray()) {
         v8::Array* array = v8::Array::Cast(*propertiesObject);
         size_t numProperties = array->Length();
         for (size_t i = 0; i < numProperties; i++) {
-            Local<Object> propertyObject = propertiesObject->Get((unsigned int)i)->ToObject();
+            Local<Object> propertyObject = array->Get((unsigned int)i)->ToObject();
             std::string propertyName = ToString(propertyObject->Get(ToString(iso, "name")));
             objectSchema.properties.emplace_back(ParseProperty(iso, propertyObject, propertyName, objectDefaults));
         }
@@ -188,7 +181,7 @@ realm::ObjectSchema ParseObjectSchema(Isolate* iso, Local<Object> objectSchemaOb
         size_t propertyCount = propertyNames->Length();
         for (size_t i = 0; i < propertyCount; i++) {
             Local<Value> propertyName = propertyNames->Get((unsigned int)i);
-            Local<Value> propertyValue = propertiesObject->Get(propertyName->ToString());
+            Local<Value> propertyValue = propertiesObject->ToObject()->Get(propertyName->ToString());
             objectSchema.properties.emplace_back(ParseProperty(iso, propertyValue, ToString(propertyName), objectDefaults));
         }
     }
@@ -206,7 +199,9 @@ realm::ObjectSchema ParseObjectSchema(Isolate* iso, Local<Object> objectSchemaOb
     // store prototype so that objects of this type will have their prototype set to this prototype object.
     if (*prototypeObject) {
         // FIXME: protect prototypeObject
-        s_prototypes[objectSchema.name] = std::move(prototypeObject);
+        Persistent<Object> p_object;
+        p_object.Reset(iso, prototypeObject);
+        prototypes[objectSchema.name] = std::move(prototypeObject);
     }
 
     defaults.emplace(objectSchema.name, std::move(objectDefaults));

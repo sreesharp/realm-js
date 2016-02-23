@@ -22,7 +22,7 @@
       "ldflags": [ '-L../core/', '-lrealm' ],
       "xcode_settings" : {
           'OTHER_CFLAGS' : [ '-mmacosx-version-min=10.8', '-DREALM_ENABLE_REPLICATION', '-fexceptions', '-frtti', '-std=c++14', '-stdlib=libc++', '-g', '-O0', '-Wno-mismatched-tags' ],
-          'OTHER_LDFLAGS': [ '-L../core/', '-lrealm' ]
+          'OTHER_LDFLAGS': [ '-mmacosx-version-min=10.8', '-L../core/', '-lrealm', '-std=c++14' ]
       },
     }
   ]
