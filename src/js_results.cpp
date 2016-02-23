@@ -143,7 +143,7 @@ JSValueRef ResultsFilteredSnapshot(JSContextRef ctx, JSObjectRef function, JSObj
         
         RJSValidateArgumentCountIsAtLeast(argumentCount, 2);
         SharedRealm sharedRealm = *RJSGetInternal<SharedRealm *>(thisObject);
-        JSObjectRef snapshotObject = RJSResultsCreate(ctx, sharedRealm, results->get_object_schema(), std::move(results->get_query()), argumentCount - 1, arguments);
+        JSObjectRef snapshotObject = RJSResultsCreateFiltered(ctx, sharedRealm, results->get_object_schema(), std::move(results->get_query()), argumentCount - 1, arguments);
 
         JSGlobalContextRef globalContext = JSContextGetGlobalContext(ctx);
         JSGlobalContextRetain(globalContext);
