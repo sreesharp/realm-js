@@ -36,6 +36,9 @@ LOCAL_SRC_FILES := \
   src/object-store/src/parser/parser.cpp \
   src/object-store/src/parser/query_builder.cpp \
   src/object-store/src/impl/transact_log_handler.cpp \
+  src/object-store/src/impl/async_query.cpp \
+  src/object-store/src/impl/realm_coordinator.cpp \
+  src/object-store/src/impl/generic/external_commit_helper.cpp \
   vendor/base64.cpp
 
 LOCAL_C_INCLUDES := src

@@ -28,9 +28,9 @@ class AsyncExample extends Component {
   }
 
   async runAsyncQuery() {
-    var count = 1000000;
     this.setState({text: "Creating " + count + " objects."});
     var realm = new Realm({schema: [TestObjectSchema]});
+    var count = 1;
     realm.write(() => {
       for (var i = 0; i < count; i++) {
         realm.create('TestObject', {string: "" + i});
@@ -39,7 +39,7 @@ class AsyncExample extends Component {
 
     this.setState({text: "Querying."});
 
-    realm.objects('TestObject').filteredSnapshot("string endswith '1'", (results) => {
+    realm.objects('TestObject').filteredSnapshot("string contains '1' || string contains '2'", (results) => {
         console.log("Got query");
         this.setState({text: "Recieved " + results.length + " query results."});
     });
