@@ -42,6 +42,7 @@ void RealmSchemaWrap::New(const FunctionCallbackInfo<Value>& args) {
         }
         else {
             makeError(iso, "Wrong number of arguments");
+            args.GetReturnValue().SetUndefined();
             return;
         }
     } else {

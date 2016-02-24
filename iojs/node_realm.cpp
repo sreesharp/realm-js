@@ -138,6 +138,8 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
                 break;
             default:
                 makeError(iso, "invalid arguments.");
+                args.GetReturnValue().SetUndefined();
+                return;
             }
             // FIXME: ensure_directory_exists_for_file(config.path);
             realm::SharedRealm realm = realm::Realm::get_shared_realm(config);
@@ -152,8 +154,9 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
             args.GetReturnValue().Set(args.This());
         }
         catch (std::exception &ex) {
-            makeError(iso, ex);
+            makeError(iso, ex.what());
             args.GetReturnValue().SetUndefined();
+            return;
         }
     } else {
         // FIXME: Invoked as plain function `Realm(...)`, turn into construct call.
@@ -172,6 +175,7 @@ void RealmWrap::CreateObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
         auto object_schema = shared_realm->config().schema->find(class_name);
         if (object_schema == shared_realm->config().schema->end()) {
             makeError(iso, "Object type '" + class_name + "' not found in schema.");
+            args.GetReturnValue().SetUndefined();
             return;
         }
         Local<Object> obj = ValidatedValueToObject(iso, args[1]);
@@ -191,5 +195,6 @@ void RealmWrap::CreateObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
     } catch (std::exception& ex) {
         makeError(iso, ex);
         args.GetReturnValue().SetUndefined();
+        return;
     }
 }
