@@ -40,7 +40,12 @@ static inline std::size_t ValidatedArrayLength(v8::Value *value) {
     return array->Length();
 }
 
-static inline void ValidataArgumentRange(std::size_t argc, std::size_t min, std::size_t max) {
+static inline void ValidateArgumentCount(std::size_t argc, std::size_t count) {
+    if (argc != count) {
+        throw std::invalid_argument(std::to_string(count) + " argument(s) expected.");
+    }
+}
+static inline void ValidateArgumentRange(std::size_t argc, std::size_t min, std::size_t max) {
     if (argc < min || argc > max) {
         throw std::invalid_argument("Invalid arguments");
     }
@@ -58,6 +63,13 @@ static inline v8::Local<v8::Object> ValidatedValueToObject(v8::Isolate* ctx, v8:
         throw std::runtime_error(message ?: "Value is not an object.");
     }
     return object;
+}
+
+static inline v8::Local<v8::Function> ValidatedValueToFunction(v8::Isolate* ctx, v8::Local<v8::Value> value, const char *message = NULL) {
+	if (value->IsUndefined() || !value->IsFunction()) {
+		throw std::runtime_error(message ?: "Value is not a function.");
+	}
+	return v8::Local<v8::Function>::Cast(value);
 }
 
 static inline v8::Local<v8::Date> ValidatedValueToDate(v8::Isolate* ctx, v8::Local<v8::Value> value,

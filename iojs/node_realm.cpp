@@ -71,6 +71,7 @@ void RealmWrap::Init(Handle<Object> exports) {
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
     NODE_SET_PROTOTYPE_METHOD(tpl, "create", RealmWrap::CreateObject);
+	NODE_SET_PROTOTYPE_METHOD(tpl, "write",  RealmWrap::Write);
 
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "Realm"), tpl->GetFunction());
@@ -168,7 +169,7 @@ void RealmWrap::CreateObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
     HandleScope scope(iso);
 
     try {
-        ValidataArgumentRange(args.Length(), 2, 3);
+        ValidateArgumentRange(args.Length(), 2, 3);
         std::string class_name = ValidatedStringForValue(iso, args[0], "objectType");
         RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(args.This());
         realm::SharedRealm shared_realm = rw->m_realm;
@@ -197,4 +198,30 @@ void RealmWrap::CreateObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
         args.GetReturnValue().SetUndefined();
         return;
     }
+}
+
+void RealmWrap::Write(const FunctionCallbackInfo<Value>& args) {
+    Isolate* iso = Isolate::GetCurrent();
+    HandleScope scope(iso);
+	
+    try {
+        ValidateArgumentCount(args.Length(), 1);
+		Local<Function> fun = ValidatedValueToFunction(iso, args[0]);
+		RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(args.This());
+		realm::SharedRealm shared_realm = rw->m_realm;
+		shared_realm->begin_transaction();
+        TryCatch trycatch;
+		fun->Call(v8::Context::New(iso)->Global(), 0, NULL);
+		if (trycatch.HasCaught()) {
+			shared_realm->cancel_transaction();
+		    trycatch.ReThrow();
+		 }
+		 else {
+		 	shared_realm->commit_transaction();
+		  }
+    }
+	catch (std::exception &ex) {
+		makeError(iso, ex.what());
+	}
+	args.GetReturnValue().SetUndefined();
 }
