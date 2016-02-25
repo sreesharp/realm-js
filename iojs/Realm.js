@@ -1,12 +1,12 @@
 global.Realm = require('./build/Release/Realm').Realm;
-global.RealmType = {
-	'Bool': 	'RealmTypeBool',
-	'Int': 		'RealmTypeInt',
-	'Float': 	'RealmTypeFloat',
-	'Double': 	'RealmTypeDouble',
-	'String': 	'RealmTypeString',
-	'Date': 	'RealmTypeDate',
-	'Data': 	'RealmTypeData',
-	'Object': 	'RealmTypeObject',
-	'Array': 	'RealmTypeArray',
+global.Realm.Types = {
+	'BOOL': 	'bool',
+	'INT': 		'int',
+	'FLOAT': 	'float',
+	'DOUBLE': 	'double',
+	'STRING': 	'string',
+	'DATE': 	'date',
+	'DATA': 	'data',
+	'OBJECT': 	'object',
+	'LIST': 	'list',
 };

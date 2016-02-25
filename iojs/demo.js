@@ -4,8 +4,8 @@ function PersonObject() {}
 PersonObject.prototype.schema = {
   name: 'Person',
   properties: [
-    {name: 'name', type: RealmType.String},
-    {name: 'id',   type: RealmType.Int},
+    {name: 'name', type: Realm.Types.STRING},
+    {name: 'id',   type: Realm.Types.INT},
   ]
 };
 PersonObject.prototype.description = function() {

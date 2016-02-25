@@ -77,28 +77,28 @@ realm::Property ParseProperty(Isolate* iso, Local<Value> propertyAttributes, std
         type = ToString(propertyAttributes->ToString());
     }
 
-    if (type == "RealmTypeBool") {
+    if (type == "bool") {
         prop.type = PropertyTypeBool;
     }
-    else if (type == "RealmTypeInt") {
+    else if (type == "int") {
         prop.type = PropertyTypeInt;
     }
-    else if (type == "RealmTypeFloat") {
+    else if (type == "float") {
         prop.type = PropertyTypeFloat;
     }
-    else if (type == "RealmTypeDouble") {
+    else if (type == "double") {
         prop.type = PropertyTypeDouble;
     }
-    else if (type == "RealmTypeString") {
+    else if (type == "string") {
         prop.type = PropertyTypeString;
     }
-    else if (type == "RealmTypeDate") {
+    else if (type == "date") {
         prop.type = PropertyTypeDate;
     }
-    else if (type == "RealmTypeData") {
+    else if (type == "data") {
         prop.type = PropertyTypeData;
     }
-    else if (type == "RealmTypeArray") {
+    else if (type == "list") {
         if (propertyObject->IsUndefined() || propertyObject->IsNull()) {
             throw new std::runtime_error("List property must specify 'objectType'");
         }
@@ -115,7 +115,7 @@ realm::Property ParseProperty(Isolate* iso, Local<Value> propertyAttributes, std
         prop.is_nullable = true;
 
         // The type could either be 'object' or the name of another object type in the same schema.
-        if (type == "RealmTypeObject") {
+        if (type == "object") {
             if (propertyObject->IsUndefined() || propertyObject->IsNull()) {
                 throw std::runtime_error("Object property must specify 'objectType'");
             }
