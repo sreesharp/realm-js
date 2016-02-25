@@ -72,6 +72,7 @@ void RealmWrap::Init(Handle<Object> exports) {
 
     NODE_SET_PROTOTYPE_METHOD(tpl, "create", RealmWrap::CreateObject);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "write",  RealmWrap::Write);
+	NODE_SET_PROTOTYPE_METHOD(tpl, "deleteAll", RealmWrap::DeleteAll);
 
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "Realm"), tpl->GetFunction());
@@ -221,6 +222,28 @@ void RealmWrap::Write(const FunctionCallbackInfo<Value>& args) {
 		  }
     }
 	catch (std::exception &ex) {
+		makeError(iso, ex.what());
+	}
+	args.GetReturnValue().SetUndefined();
+}
+
+void RealmWrap::DeleteAll(const FunctionCallbackInfo<Value>& args) {
+	Isolate* iso = Isolate::GetCurrent();
+	HandleScope scope(iso);
+	
+	try {
+		ValidateArgumentCount(args.Length(), 0);
+		RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(args.This());
+		realm::SharedRealm realm = rw->m_realm;
+		if (!realm->is_in_transaction()) {
+			throw std::runtime_error("Can only delete objects within a transaction.");
+		}
+		
+		for (auto objectSchema : *realm->config().schema) {
+			realm::ObjectStore::table_for_object_type(realm->read_group(), objectSchema.name)->clear();
+		}
+	}
+	catch (std::exception& ex) {
 		makeError(iso, ex.what());
 	}
 	args.GetReturnValue().SetUndefined();
