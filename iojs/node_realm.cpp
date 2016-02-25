@@ -70,9 +70,10 @@ void RealmWrap::Init(Handle<Object> exports) {
     tpl->SetClassName(String::NewFromUtf8(isolate, "Realm"));
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-    NODE_SET_PROTOTYPE_METHOD(tpl, "create", RealmWrap::CreateObject);
-	NODE_SET_PROTOTYPE_METHOD(tpl, "write",  RealmWrap::Write);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "create",    RealmWrap::CreateObject);
+	NODE_SET_PROTOTYPE_METHOD(tpl, "write",     RealmWrap::Write);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "deleteAll", RealmWrap::DeleteAll);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "close",     RealmWrap::Close);
 
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "Realm"), tpl->GetFunction());
@@ -247,4 +248,21 @@ void RealmWrap::DeleteAll(const FunctionCallbackInfo<Value>& args) {
 		makeError(iso, ex.what());
 	}
 	args.GetReturnValue().SetUndefined();
+}
+
+void RealmWrap::Close(const FunctionCallbackInfo<Value>& args) {
+	Isolate* iso = Isolate::GetCurrent();
+	HandleScope scope(iso);
+	
+	try {
+		ValidateArgumentCount(args.Length(), 0);
+		RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(args.This());
+		realm::SharedRealm realm = rw->m_realm;
+		realm->close();
+		// FIXME: remove from cache
+	}
+    catch (std::exception& ex) {
+        makeError(iso, ex.what());
+    }
+    args.GetReturnValue().SetUndefined();
 }

@@ -19,6 +19,7 @@ public:
     static void CreateObject(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void Write(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void DeleteAll(const v8::FunctionCallbackInfo<v8::Value>& args);
+	static void Close(const v8::FunctionCallbackInfo<v8::Value>& args);
 	
 private:
     ~RealmWrap();
