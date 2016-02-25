@@ -60,7 +60,7 @@ realm::Property ParseProperty(Isolate* iso, Local<Value> propertyAttributes, std
     if (propertyAttributes->IsObject()) {
         propertyObject = propertyAttributes->ToObject();
         if (!propertyObject->Has(ToString(iso, "type"))) {
-            throw new std::runtime_error("Does not have 'type' attribute");
+            throw std::runtime_error("Does not have 'type' attribute");
         }
         type = ToString(propertyObject->Get(ToString(iso, "type")));
         if (propertyObject->Has(ToString(iso, "optional"))) {
@@ -69,7 +69,7 @@ realm::Property ParseProperty(Isolate* iso, Local<Value> propertyAttributes, std
                 prop.is_nullable = optionalValue->BooleanValue();
             }
             else {
-                throw new std::runtime_error("'optional' designation expected to be of type boolean");
+                throw std::runtime_error("'optional' designation expected to be of type boolean");
             }
         }
     }
@@ -100,14 +100,14 @@ realm::Property ParseProperty(Isolate* iso, Local<Value> propertyAttributes, std
     }
     else if (type == "list") {
         if (propertyObject->IsUndefined() || propertyObject->IsNull()) {
-            throw new std::runtime_error("List property must specify 'objectType'");
+            throw std::runtime_error("List property must specify 'objectType'");
         }
         prop.type = PropertyTypeArray;
         if (propertyObject->Has(ToString(iso, "objectType"))) {
             prop.object_type = ToString(propertyObject->Get(ToString(iso, "objectType"))->ToString());
         }
         else {
-            throw new std::runtime_error("Does not have 'objectType'");
+            throw std::runtime_error("Does not have 'objectType'");
         }
     }
     else {
@@ -145,11 +145,11 @@ realm::ObjectSchema ParseObjectSchema(Isolate* iso, Local<Object> objectSchemaOb
     if (objectSchemaObject->Has(ToString(iso, "prototype"))) {
         Local<Value> prototypeValue = objectSchemaObject->Get(ToString(iso, "prototype"));
         if (!prototypeValue->IsObject()) {
-            throw new std::runtime_error("Not an object.");
+            throw std::runtime_error("Not an object.");
         }
         prototypeObject = prototypeValue->ToObject();
         if (!prototypeObject->Has(ToString(iso, "schema"))) {
-            throw new std::runtime_error("Realm object prototype must have a 'schema' property.");
+            throw std::runtime_error("Realm object prototype must have a 'schema' property.");
         }
         objectSchemaObject = prototypeObject->Get(ToString(iso, "schema"))->ToObject();
     }
@@ -165,7 +165,7 @@ realm::ObjectSchema ParseObjectSchema(Isolate* iso, Local<Object> objectSchemaOb
     objectSchema.name = ToString(objectSchemaObject->Get(ToString(iso, "name")));
 
     if (!objectSchemaObject->Has(ToString(iso, "properties"))) {
-        throw new std::runtime_error("ObjectSchema must have a 'properties' object.");
+        throw std::runtime_error("ObjectSchema must have a 'properties' object.");
     }
     Local<Value> propertiesObject = objectSchemaObject->Get(ToString(iso, "properties"));
     if (propertiesObject->IsArray()) {

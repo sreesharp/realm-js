@@ -121,7 +121,7 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
                             config.schema.reset(new realm::Schema(RealmSchemaWrap::ParseSchema(iso, schemaValue->ToObject(), defaults, prototypes)));
                         }
                         else {
-                            throw new std::runtime_error("Property 'schema' expected to be an object.");
+                            throw std::runtime_error("Property 'schema' expected to be an object.");
                         }
                     }
 
@@ -131,7 +131,7 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
                             config.schema_version = versionValue->NumberValue();
                         }
                         else {
-                            throw new std::runtime_error("Property 'schemaVersion' expected to be a number.");
+                            throw std::runtime_error("Property 'schemaVersion' expected to be a number.");
                         }
                     }
                     else {
