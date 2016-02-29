@@ -1,6 +1,20 @@
-/* Copyright 2015 Realm Inc - All Rights Reserved
- * Proprietary and Confidential
- */
+////////////////////////////////////////////////////////////////////////////
+//
+// Copyright 2016 Realm Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////
 
 'use strict';
 
@@ -261,6 +275,53 @@ module.exports = BaseTest.extend({
         });
     },
 
+    testRealmCreateWithConstructor: function() {
+        var customCreated = 0;
+
+        function CustomObject() {
+            customCreated++;
+            this.intCol *= 100;
+        }
+        CustomObject.schema = {
+            name: 'CustomObject',
+            properties: {
+                intCol: 'int'
+            }
+        }
+
+        function InvalidObject() {
+            return {};
+        }
+        TestCase.assertThrows(function() {
+            new Realm({schema: [InvalidObject]});
+        });
+
+        InvalidObject.schema = {
+            name: 'InvalidObject',
+            properties: {
+                intCol: 'int'
+            }
+        }
+
+        var realm = new Realm({schema: [CustomObject, InvalidObject]});
+
+        realm.write(function() {
+            var object = realm.create('CustomObject', {intCol: 1});
+            TestCase.assertTrue(object instanceof CustomObject);
+            TestCase.assertTrue(Object.getPrototypeOf(object) == CustomObject.prototype);
+            TestCase.assertEqual(customCreated, 1);
+
+            // Should have been multiplied by 100 in the constructor.
+            TestCase.assertEqual(object.intCol, 100);
+        });
+
+        TestCase.assertThrows(function() {
+            realm.write(function() {
+                realm.create('InvalidObject', {intCol: 1});
+            });
+        });
+    },
+
     testRealmDelete: function() {
         var realm = new Realm({schema: [schemas.TestObject]});
 
@@ -290,7 +351,7 @@ module.exports = BaseTest.extend({
             TestCase.assertEqual(objects[0].doubleCol, 7, "wrong property value");
             TestCase.assertEqual(objects[1].doubleCol, 8, "wrong property value");
 
-            var threeObjects = realm.objects('TestObject', "doubleCol < 5");
+            var threeObjects = realm.objects('TestObject').filtered("doubleCol < 5");
             TestCase.assertEqual(threeObjects.length, 3, "wrong results count");
             realm.delete(threeObjects);
             TestCase.assertEqual(objects.length, 4, 'wrong object count');
@@ -341,40 +402,8 @@ module.exports = BaseTest.extend({
             realm.objects('InvalidClass');
         });
         TestCase.assertThrows(function() { 
-            realm.objects('PersonObject', 'invalid query');
+            realm.objects('PersonObject', 'truepredicate');
         });
-        TestCase.assertThrows(function() { 
-            realm.objects('PersonObject', []);
-        });
-
-        TestCase.assertEqual(realm.objects('PersonObject', "truepredicate").length, 4);
-        TestCase.assertEqual(realm.objects('PersonObject').length, 4);
-        TestCase.assertEqual(realm.objects('PersonObject', 'age = 11').length, 1);
-        TestCase.assertEqual(realm.objects('PersonObject', 'age = 11')[0].name, 'Tim');
-        TestCase.assertEqual(realm.objects('PersonObject', 'age = 12').length, 2);
-        TestCase.assertEqual(realm.objects('PersonObject', 'age = 13').length, 0);
-        TestCase.assertEqual(realm.objects('PersonObject', 'age < 12').length, 2);
-        TestCase.assertEqual(realm.objects('PersonObject', 'age > 10 && age < 13').length, 3);
-        TestCase.assertEqual(realm.objects('PersonObject', 'age >= 11 && age < 13').length, 3);
-        TestCase.assertEqual(realm.objects('PersonObject', 'name = "Tim"').length, 1);
-        TestCase.assertEqual(realm.objects('PersonObject', 'name = \'Tim\'').length, 1);
-        TestCase.assertEqual(realm.objects('PersonObject', 'married == TRUE').length, 1);
-        TestCase.assertEqual(realm.objects('PersonObject', 'married == false').length, 3);
-
-        TestCase.assertEqual(realm.objects('PersonObject', 'name = $0', 'Tim').length, 1);
-        TestCase.assertEqual(realm.objects('PersonObject', 'age > $1 && age < $0', 13, 10).length, 3);
-        TestCase.assertThrows(function() {
-            realm.objects('PersonObject', 'age > $2 && age < $0', 13, 10)
-        });
-
-        realm.write(function() {
-            realm.create('DefaultValuesObject', {'dateCol': new Date(3)});
-            realm.create('DefaultValuesObject', {'dateCol': new Date(4)});
-            realm.create('DefaultValuesObject', {'dateCol': new Date(5)});
-        });
-
-        TestCase.assertEqual(realm.objects('DefaultValuesObject', 'dateCol > $0', new Date(4)).length, 1);
-        TestCase.assertEqual(realm.objects('DefaultValuesObject', 'dateCol <= $0', new Date(4)).length, 2);
     },
 
     testNotifications: function() {

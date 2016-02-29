@@ -1,6 +1,20 @@
-/* Copyright 2015 Realm Inc - All Rights Reserved
- * Proprietary and Confidential
- */
+////////////////////////////////////////////////////////////////////////////
+//
+// Copyright 2016 Realm Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////
 
 
 'use strict';
@@ -46,10 +60,9 @@ function runQuerySuite(suite) {
         }
     });
 
-    var args;
     function getArgs(startArg) {
-        args = test.slice(startArg, startArg + 2);
-        for (var i = startArg + 2; i < test.length; i++) {
+        var args = [test[startArg]];
+        for (var i = startArg + 1; i < test.length; i++) {
             var arg = test[i];
             if (Array.isArray(arg)) {
                 // aray arguments correspond to [objectAtIndex, propertyName]
@@ -65,14 +78,20 @@ function runQuerySuite(suite) {
     for (var index in suite.tests) {
         var test = suite.tests[index];
         if (test[0] == "QueryCount") {
-            var length = realm.objects.apply(realm, getArgs(2)).length;
-            TestCase.assertEqual(test[1], length, "Query '" + args[1] + "' on type '" + args[0] + "' expected " + test[1] + " results, got " + length);
+            var type = test[2];
+            var args = getArgs(3);
+            var objects = realm.objects(type);
+            var length = objects.filtered.apply(objects, args).length;
+            TestCase.assertEqual(test[1], length, "Query '" + args[0] + "' on type '" + type + "' expected " + test[1] + " results, got " + length);
         }
         else if (test[0] == "ObjectSet") {
-            var results = realm.objects.apply(realm, getArgs(2));           
-            TestCase.assertEqual(test[1].length, results.length, "Query '" + args[1] + "' on type '" + args[0] + "' expected " + test[1].length + " results, got " + results.length);
+            var type = test[2];
+            var args = getArgs(3);
+            var objects = realm.objects(type);
+            var results = objects.filtered.apply(objects, args);           
+            TestCase.assertEqual(test[1].length, results.length, "Query '" + args[0] + "' on type '" + type+ "' expected " + test[1].length + " results, got " + results.length);
 
-            var objSchema = suite.schema.find(function(el) { return el.name == args[0] });
+            var objSchema = suite.schema.find(function(el) { return el.name == type });
             var primary = objSchema.primaryKey;
             if (!primary) {
                 throw "Primary key required for object comparison";
@@ -84,7 +103,8 @@ function runQuerySuite(suite) {
         }
         else if (test[0] == "QueryThrows") {
             TestCase.assertThrows(function() {
-                realm.objects.apply(realm, getArgs(1));
+                var args = getArgs(2);
+                realm.objects.apply(realm, args);
             }, "Expected exception not thrown for query: " + JSON.stringify(args));
         }
         else if (test[0] != "Disabled") {

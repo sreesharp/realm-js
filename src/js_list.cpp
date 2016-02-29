@@ -1,12 +1,29 @@
-/* Copyright 2015 Realm Inc - All Rights Reserved
- * Proprietary and Confidential
- */
+////////////////////////////////////////////////////////////////////////////
+//
+// Copyright 2016 Realm Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////
 
 #include "js_list.hpp"
 #include "js_object.hpp"
 #include "js_results.hpp"
 #include "js_util.hpp"
+
 #include "object_accessor.hpp"
+#include "parser.hpp"
+#include "query_builder.hpp"
 
 #include <assert.h>
 
@@ -15,13 +32,10 @@ using namespace realm;
 
 JSValueRef ListGetProperty(JSContextRef ctx, JSObjectRef object, JSStringRef propertyName, JSValueRef* jsException) {
     try {
-        // index subscripting
         List *list = RJSGetInternal<List *>(object);
-        size_t size = list->size();
-
         std::string indexStr = RJSStringForJSString(propertyName);
         if (indexStr == "length") {
-            return JSValueMakeNumber(ctx, size);
+            return JSValueMakeNumber(ctx, list->size());
         }
 
         return RJSObjectCreate(ctx, Object(list->realm(), list->get_object_schema(), list->get(RJSValidatedPositiveIndex(indexStr))));
@@ -192,8 +206,7 @@ JSValueRef ListStaticResults(JSContextRef ctx, JSObjectRef function, JSObjectRef
         List *list = RJSGetInternal<List *>(thisObject);
         RJSValidateArgumentCount(argumentCount, 0);
 
-        Query query = list->get_query();
-        return RJSResultsCreate(ctx, list->realm(), list->get_object_schema(), query, false);
+        return RJSResultsCreate(ctx, list->realm(), list->get_object_schema(), std::move(list->get_query()), false);
     }
     catch (std::exception &exp) {
         if (jsException) {
@@ -203,7 +216,39 @@ JSValueRef ListStaticResults(JSContextRef ctx, JSObjectRef function, JSObjectRef
     return NULL;
 }
 
-JSObjectRef RJSListCreate(JSContextRef ctx, realm::List &list) {
+JSValueRef ListFiltered(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* jsException) {
+    try {
+        List *list = RJSGetInternal<List *>(thisObject);
+        RJSValidateArgumentCountIsAtLeast(argumentCount, 1);
+
+        SharedRealm sharedRealm = *RJSGetInternal<SharedRealm *>(thisObject);
+        return RJSResultsCreateFiltered(ctx, sharedRealm, list->get_object_schema(), std::move(list->get_query()), argumentCount, arguments);
+    }
+    catch (std::exception &exp) {
+        if (jsException) {
+            *jsException = RJSMakeError(ctx, exp);
+        }
+    }
+    return NULL;
+}
+
+JSValueRef ListSorted(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* jsException) {
+    try {
+        List *list = RJSGetInternal<List *>(thisObject);
+        RJSValidateArgumentRange(argumentCount, 1, 2);
+
+        SharedRealm sharedRealm = *RJSGetInternal<SharedRealm *>(thisObject);
+        return RJSResultsCreateSorted(ctx, sharedRealm, list->get_object_schema(), std::move(list->get_query()), argumentCount, arguments);
+    }
+    catch (std::exception &exp) {
+        if (jsException) {
+            *jsException = RJSMakeError(ctx, exp);
+        }
+    }
+    return NULL;
+}
+
+JSObjectRef RJSListCreate(JSContextRef ctx, List &list) {
     return RJSWrapObject<List *>(ctx, RJSListClass(), new List(list));
 }
 
@@ -213,6 +258,8 @@ static const JSStaticFunction RJSListFuncs[] = {
     {"shift", ListShift, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontEnum | kJSPropertyAttributeDontDelete},
     {"unshift", ListUnshift, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontEnum | kJSPropertyAttributeDontDelete},
     {"splice", ListSplice, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontEnum | kJSPropertyAttributeDontDelete},
+    {"filtered", ListFiltered, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontEnum | kJSPropertyAttributeDontDelete},
+    {"sorted", ListSorted, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontEnum | kJSPropertyAttributeDontDelete},
     {"snapshot", ListStaticResults, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontEnum | kJSPropertyAttributeDontDelete},
     {NULL, NULL},
 };

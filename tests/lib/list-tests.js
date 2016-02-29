@@ -1,6 +1,20 @@
-/* Copyright 2015 Realm Inc - All Rights Reserved
- * Proprietary and Confidential
- */
+////////////////////////////////////////////////////////////////////////////
+//
+// Copyright 2016 Realm Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////
 
 'use strict';
 
@@ -442,5 +456,57 @@ module.exports = BaseTest.extend({
             TestCase.assertEqual(arrayCopy.length, 2);
             TestCase.assertEqual(arrayCopy[0], null);
         });
+    },
+
+    testListFiltered: function() {
+        var realm = new Realm({schema: [schemas.PersonObject, schemas.PersonList]});
+        var list;
+
+        realm.write(function() {
+            var object = realm.create('PersonList', {list: [
+                {name: 'Ari', age: 10},
+                {name: 'Tim', age: 11},
+                {name: 'Bjarne', age: 12},
+                {name: 'Alex', age: 12, married: true}
+            ]});
+            realm.create('PersonObject', {name: 'NotInList', age: 10});
+
+            list = object.list;
+        });
+
+        TestCase.assertEqual(list.filtered("truepredicate").length, 4);
+        TestCase.assertEqual(list.filtered('age = 11')[0].name, 'Tim');
+        TestCase.assertEqual(list.filtered('age = 12').length, 2);
+        TestCase.assertEqual(list.filtered('age > 10 && age < 13').length, 3);
+        TestCase.assertEqual(list.filtered('age > 10').filtered('age < 13').length, 3);
+    },
+
+    testListSorted: function() {
+        var realm = new Realm({schema: [schemas.PersonObject, schemas.PersonList]});
+        var list;
+
+        realm.write(function() {
+            var object = realm.create('PersonList', {list: [
+                {name: 'Ari', age: 10},
+                {name: 'Tim', age: 11},
+                {name: 'Bjarne', age: 12},
+                {name: 'Alex', age: 12, married: true}
+            ]});
+            realm.create('PersonObject', {name: 'NotInList', age: 10});
+
+            list = object.list;
+        });
+
+        var names = function(results, prop) {
+            return Array.prototype.map.call(results, function(object) {
+                return object.name;
+            });
+        };
+
+        var objects = list.sorted('name', true);
+        TestCase.assertArraysEqual(names(objects), ['Tim', 'Bjarne', 'Ari', 'Alex']);
+
+        objects = list.sorted(['age', 'name']);
+        TestCase.assertArraysEqual(names(objects), ['Ari', 'Tim', 'Alex', 'Bjarne']);
     },
 });

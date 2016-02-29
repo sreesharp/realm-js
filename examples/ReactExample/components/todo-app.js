@@ -1,24 +1,38 @@
-/* Copyright 2015 Realm Inc - All Rights Reserved
- * Proprietary and Confidential
- */
+////////////////////////////////////////////////////////////////////////////
+//
+// Copyright 2016 Realm Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////
 
 'use strict';
 
-const React = require('react-native');
-const TodoItem = require('./todo-item');
-const TodoListView = require('./todo-listview');
-const realm = require('./realm');
-const styles = require('./styles');
-
-const {
+import React, {
+    Component,
     Navigator,
     StatusBarIOS,
     Text,
     TouchableOpacity,
     View,
-} = React;
+} from 'react-native';
 
-class TodoApp extends React.Component {
+import TodoItem from './todo-item';
+import TodoListView from './todo-listview';
+import realm from './realm';
+import styles from './styles';
+
+export default class TodoApp extends Component {
     constructor(props) {
         super(props);
 
@@ -52,9 +66,10 @@ class TodoApp extends React.Component {
     }
 
     render() {
+        let objects = realm.objects('Todo');
         let extraItems = [
-            {name: 'Complete', items: realm.objects('Todo', 'done = true')},
-            {name: 'Incomplete', items: realm.objects('Todo', 'done = false')},
+            {name: 'Complete', items: objects.filtered('done = true')},
+            {name: 'Incomplete', items: objects.filtered('done = false')},
         ];
 
         let route = {
@@ -150,8 +165,11 @@ class TodoApp extends React.Component {
     }
 
     _setEditingRow(rowIndex) {
+        let listView = this.currentListView;
+
         // Update the state on the currently displayed TodoList to edit this new item.
-        this.currentListView.setState({editingRow: rowIndex});
+        listView.setState({editingRow: rowIndex});
+        listView.updateDataSource();
     }
 }
 
@@ -200,5 +218,3 @@ const RouteMapper = {
         );
     },
 };
-
-module.exports = TodoApp;
