@@ -12,12 +12,22 @@
         "../src/object-store/shared_realm.cpp",
         "../src/object-store/impl/transact_log_handler.cpp",
         "../src/object-store/impl/apple/external_commit_helper.cpp",
+        "../src/object-store/parser/parser.cpp",
+        "../src/object-store/parser/query_builder.cpp",
         "node_init.cpp",
         "node_realm.cpp",
         "node_realm_object.cpp",
-        "node_realm_schema.cpp"
+        "node_realm_schema.cpp",
+        "node_realm_results.cpp"
       ],
-      "include_dirs": [ "../core/include", "../src/object-store", "../src/object-store/impl" , "../src/object-store/impl/apple" ],
+      "include_dirs": [ 
+          "../core/include",
+          "../src/object-store",
+          "../src/object-store/impl",
+          "../src/object-store/impl/apple",
+          "../src/object-store/parser",
+          "../vendor/PEGTL"
+      ],
       "cflags_cc": [ '-DREALM_HAVE_CONFIG', '-fexceptions', '-frtti', '-std=c++14', '-g', '-O0'],
       "ldflags": [ '-L../core/', '-lrealm' ],
       "xcode_settings" : {

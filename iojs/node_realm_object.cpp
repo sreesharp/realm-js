@@ -8,13 +8,14 @@
 #include "object_accessor.hpp"
 
 #include "util.hpp"
+#include "node_realm.hpp"
 #include "node_realm_object.hpp"
 #include "node_realm_schema.hpp"
 
 using namespace v8;
 
 Persistent<Function> RealmObjectWrap::constructor;
-RealmObjectWrap::RealmObjectWrap(realm::Object* object) : m_object(object) {}
+RealmObjectWrap::RealmObjectWrap() : m_object(0) {}
 RealmObjectWrap::~RealmObjectWrap() {}
 
 void RealmObjectWrap::Init(Handle<Object> exports) {
@@ -22,6 +23,7 @@ void RealmObjectWrap::Init(Handle<Object> exports) {
 
     Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, RealmObjectWrap::New);
     tpl->SetClassName(String::NewFromUtf8(isolate, "RealmObject"));
+    tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "RealmObject"), tpl->GetFunction());
@@ -30,19 +32,39 @@ void RealmObjectWrap::Init(Handle<Object> exports) {
 void RealmObjectWrap::New(const FunctionCallbackInfo<Value>& args) {
     Isolate* iso = Isolate::GetCurrent();
     HandleScope scope(iso);
-    makeError(iso, "You cannot create stand-alone objects");
+    if (args.IsConstructCall()) {
+        // Invoked as constructor: `new RealmResults(...)`
+        try {
+            ValidateArgumentCount(args.Length(), 0);
+            RealmObjectWrap* row = new RealmObjectWrap();       
+            row->Wrap(args.This());
+            args.GetReturnValue().Set(args.This());
+            return;
+        }
+        catch (std::exception& ex) {
+            makeError(iso, ex.what());
+            args.GetReturnValue().SetUndefined();
+            return;
+        }
+    }
+    else {
+        // FIXME: Invoked as plain function `RealmObjects(...)`, turn into construct call.
+    }
 }
 
 // Create a new Realm object. Typically done by realm.createObject()
-Handle<Object> RealmObjectWrap::Create(Isolate* iso, realm::Object* object) {
-    auto tpl = ObjectTemplate::New(iso);
-    tpl->SetInternalFieldCount(1);
-    tpl->SetNamedPropertyHandler(RealmObjectWrap::Get, RealmObjectWrap::Set);
-
-    Local<Object> obj = tpl->NewInstance();
-    obj->SetInternalField(0, External::New(iso, new RealmObjectWrap(object)));
-    return obj;
-
+Handle<Object> RealmObjectWrap::Create(Isolate* ctx, realm::Object* object) {
+    EscapableHandleScope scope(ctx);
+    
+    Local<Value> prototype = NodePrototypes(object->realm().get())[object->get_object_schema().name];
+    Local<Function> cons = Local<Function>::New(ctx, constructor);
+    Handle<Object> obj = cons->NewInstance(0, nullptr);
+    
+    obj->SetPrototype(prototype);
+    RealmObjectWrap* row = RealmObjectWrap::Unwrap<RealmObjectWrap>(obj);
+    row->m_object = object;
+    
+    return scope.Escape(obj);
 }
 
 using NullType = std::nullptr_t;
@@ -78,11 +100,6 @@ void RealmObjectWrap::Set(Local<String> name, Local<Value> value, const Property
         makeError(iso, ex);
     }
     info.GetReturnValue().SetUndefined();
-}
-
-realm::Object *RealmObjectWrap::GetObject(Local<Object> self) {
-    Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
-    return static_cast<RealmObjectWrap *>(wrap->Value())->m_object;
 }
 
 namespace realm {

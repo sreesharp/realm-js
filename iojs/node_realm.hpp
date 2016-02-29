@@ -10,6 +10,13 @@
 
 #include "shared_realm.hpp"
 
+#include "node_realm_schema.hpp"
+
+#include <map>
+
+extern std::map<std::string, realm::ObjectDefaults> &NodeDefaults(realm::Realm *realm);
+extern std::map<std::string, v8::Local<v8::Value>> &NodePrototypes(realm::Realm *realm);
+
 class RealmWrap : public node::ObjectWrap {
 public:
     RealmWrap();
@@ -20,6 +27,7 @@ public:
     static void Write(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void DeleteAll(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void Close(const v8::FunctionCallbackInfo<v8::Value>& args);
+	static void Objects(const v8::FunctionCallbackInfo<v8::Value>& args);
 	
 private:
     ~RealmWrap();

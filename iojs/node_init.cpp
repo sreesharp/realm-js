@@ -6,12 +6,14 @@
 
 #include "node_realm.hpp"
 #include "node_realm_object.hpp"
+#include "node_realm_results.hpp"
 
 using namespace v8;
 
 void InitAll(Handle<Object> exports) {
     RealmWrap::Init(exports);
     RealmObjectWrap::Init(exports);
+    RealmResultsWrap::Init(exports);
 }
 
 NODE_MODULE(Realm, InitAll)

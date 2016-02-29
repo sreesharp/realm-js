@@ -12,7 +12,7 @@
 
 class RealmObjectWrap : public node::ObjectWrap {
 public:
-    RealmObjectWrap(realm::Object* object);
+    RealmObjectWrap();
 
     static void Init(v8::Handle<v8::Object> exports);
     static void New(const v8::FunctionCallbackInfo<v8::Value>& args);

@@ -14,10 +14,12 @@
 
 #include "node_realm_object.hpp"
 #include "node_realm_schema.hpp"
+#include "node_realm_results.hpp"
 #include "util.hpp"
 
 #include <set>
 #include <string>
+#include <map>
 
 using namespace v8;
 
@@ -48,6 +50,9 @@ public:
     void add_notification(Handle<Object> notification) {};
     void remove_notification(Handle<Object> notification) {};
     void remove_all_notifications() {};
+    
+    std::map<std::string, realm::ObjectDefaults> m_defaults;
+    std::map<std::string, Local<Value>> m_prototypes;
 
 private:
     Isolate* m_context;
@@ -56,6 +61,13 @@ private:
     void notify(const char* notification_name) {};
 };
 
+std::map<std::string, realm::ObjectDefaults> &NodeDefaults(realm::Realm *realm) {
+    return static_cast<NodeRealmDelegate *>(realm->m_binding_context.get())->m_defaults;
+}
+
+std::map<std::string, Local<Value>> &NodePrototypes(realm::Realm *realm) {
+    return static_cast<NodeRealmDelegate *>(realm->m_binding_context.get())->m_prototypes;
+}
 
 static std::string s_defaultPath = "/tmp/default.realm";
 
@@ -74,6 +86,7 @@ void RealmWrap::Init(Handle<Object> exports) {
 	NODE_SET_PROTOTYPE_METHOD(tpl, "write",     RealmWrap::Write);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "deleteAll", RealmWrap::DeleteAll);
     NODE_SET_PROTOTYPE_METHOD(tpl, "close",     RealmWrap::Close);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "objects",   RealmWrap::Objects);
 
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "Realm"), tpl->GetFunction());
@@ -149,8 +162,8 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
             if (!realm->m_binding_context) {
                 realm->m_binding_context.reset(new NodeRealmDelegate(realm, iso));
             }
-            // FIXME: save defaults
-            // FIXME: save prototypes
+            NodeDefaults(realm.get()) = defaults;
+            NodePrototypes(realm.get()) = prototypes;
 
             rw->m_realm = realm;
             rw->Wrap(args.This());
@@ -265,4 +278,34 @@ void RealmWrap::Close(const FunctionCallbackInfo<Value>& args) {
         makeError(iso, ex.what());
     }
     args.GetReturnValue().SetUndefined();
+}
+
+void RealmWrap::Objects(const FunctionCallbackInfo<Value>& args) {
+	Isolate* iso = Isolate::GetCurrent();
+	HandleScope scope(iso);
+
+    try {
+        ValidateArgumentCountIsAtLeast(args.Length(), 1);
+        std::string className = ValidatedStringForValue(iso, args[0], "objectType");
+		RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(args.This());
+		realm::SharedRealm realm = rw->m_realm;
+        
+        if (args.Length() == 1) {
+            Local<Value> results = RealmResultsWrap::Create(iso, realm, className);
+            args.GetReturnValue().Set(results);
+        }
+        else {
+            std::string query = ValidatedStringForValue(iso, args[1], "predicate");
+            std::vector<Local<Value>> query_args;
+            for (std::size_t i = 2; i < args.Length(); i++) {
+                query_args.push_back(args[i]);
+            }
+            Local<Value> results = RealmResultsWrap::Create(iso, realm, className, query, query_args);
+            args.GetReturnValue().Set(results);
+        }
+    }
+    catch (std::exception& ex) {
+        makeError(iso, ex.what());
+        args.GetReturnValue().SetUndefined();
+    }
 }
