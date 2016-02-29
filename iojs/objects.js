@@ -16,11 +16,7 @@ PersonObject.prototype.description = function() {
 };
 
 
-fs.exists(filename, function(exists) {
-    if (exists) {
-        fs.unlink(filename);
-    }
-});
+try { fs.unlinkSync(filename); } catch (ignore) {}
 var realm = new Realm({path: filename, schema: [PersonObject]});
 
 for (var i = 0; i < 10; i++) {
@@ -36,7 +32,7 @@ for (var i = 0; i < all.length; i++) {
 }
 
 console.log('\n\nSome objects: id > 5');
-var some = realm.objects('Person', 'id > 5');
+var some = realm.objects('Person').filtered('id > 5');
 for (var i = 0; i < some.length; i++) {
     console.log(some[i].id + ': ' + some[i].name);
 }

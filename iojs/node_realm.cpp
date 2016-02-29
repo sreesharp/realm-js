@@ -285,24 +285,12 @@ void RealmWrap::Objects(const FunctionCallbackInfo<Value>& args) {
 	HandleScope scope(iso);
 
     try {
-        ValidateArgumentCountIsAtLeast(args.Length(), 1);
+        ValidateArgumentCount(args.Length(), 1);
         std::string className = ValidatedStringForValue(iso, args[0], "objectType");
 		RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(args.This());
 		realm::SharedRealm realm = rw->m_realm;
-        
-        if (args.Length() == 1) {
-            Local<Value> results = RealmResultsWrap::Create(iso, realm, className);
-            args.GetReturnValue().Set(results);
-        }
-        else {
-            std::string query = ValidatedStringForValue(iso, args[1], "predicate");
-            std::vector<Local<Value>> query_args;
-            for (std::size_t i = 2; i < args.Length(); i++) {
-                query_args.push_back(args[i]);
-            }
-            Local<Value> results = RealmResultsWrap::Create(iso, realm, className, query, query_args);
-            args.GetReturnValue().Set(results);
-        }
+        Local<Value> results = RealmResultsWrap::Create(iso, realm, className);
+        args.GetReturnValue().Set(results);
     }
     catch (std::exception& ex) {
         makeError(iso, ex.what());

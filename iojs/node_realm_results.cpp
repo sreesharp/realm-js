@@ -30,6 +30,8 @@ void RealmResultsWrap::Init(Handle<Object> exports) {
     tpl->InstanceTemplate()->SetIndexedPropertyHandler(Getter, 0, 0, 0, 0);
     tpl->InstanceTemplate()->SetAccessor(ToString(isolate, "length"), RealmResultsWrap::GetLength, 0);
 
+    NODE_SET_PROTOTYPE_METHOD(tpl, "filtered", RealmResultsWrap::Filtered);
+
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "RealmResults"), tpl->GetFunction());
 }
@@ -117,6 +119,7 @@ Local<Value> RealmResultsWrap::Create(Isolate* ctx, realm::SharedRealm realm, st
     Handle<Object> obj = cons->NewInstance(0, nullptr);
     RealmResultsWrap* rrw = RealmResultsWrap::Unwrap<RealmResultsWrap>(obj);
     rrw->m_results = new realm::Results(realm, *object_schema, *table);
+    rrw->m_shared_realm = realm;
     
     return scope.Escape(obj);
 }
@@ -145,7 +148,7 @@ Local<Value> RealmResultsWrap::Create(Isolate* ctx, realm::SharedRealm realm, st
     return scope.Escape(obj);
 }
 
-Local<Value> RealmResultsWrap::Create(Isolate* ctx, realm::SharedRealm realm, const realm::ObjectSchema &objectSchema, const realm::Query &query, bool live) {
+Local<Value> RealmResultsWrap::Create(Isolate* ctx, realm::SharedRealm realm, const realm::ObjectSchema &objectSchema, const realm::Query &query, bool live = true) {
     EscapableHandleScope scope(ctx);
 
     realm::Results* results = new realm::Results(realm, objectSchema, query);
@@ -157,4 +160,35 @@ Local<Value> RealmResultsWrap::Create(Isolate* ctx, realm::SharedRealm realm, co
     rrw->m_results = results;
     
     return scope.Escape(obj);
+}
+
+Local<Value> RealmResultsWrap::CreateFiltered(Isolate* ctx, realm::SharedRealm realm, const realm::ObjectSchema& objectSchema, realm::Query query, size_t argumentCount, const FunctionCallbackInfo<Value>& arguments) {
+    std::string queryString = ValidatedStringForValue(ctx, arguments[0]);
+    std::vector<Local<Value>> args(argumentCount - 1);
+    for (size_t i = 1; i < argumentCount; i++) {
+        args[i-1] = arguments[i];
+    }
+    
+    realm::parser::Predicate predicate = realm::parser::parse(queryString);
+    realm::query_builder::ArgumentConverter<Local<Value>, Isolate*> queryArgs(ctx, args);
+    realm::query_builder::apply_predicate(query, predicate, queryArgs, *realm->config().schema, objectSchema.name);
+    
+    return RealmResultsWrap::Create(ctx, realm, objectSchema, std::move(query));
+}
+
+void RealmResultsWrap::Filtered(const FunctionCallbackInfo<Value>& args) {
+    Isolate* iso = Isolate::GetCurrent();
+    
+    try {
+        RealmResultsWrap* rrw = RealmResultsWrap::Unwrap<RealmResultsWrap>(args.This());
+        realm::Results* results = rrw->m_results;
+        
+        realm::SharedRealm sharedRealm = rrw->m_shared_realm;
+        Local<Value> res = RealmResultsWrap::CreateFiltered(iso, sharedRealm, results->get_object_schema(), std::move(results->get_query()), args.Length(), args);
+        args.GetReturnValue().Set(res);
+    }
+    catch (std::exception& ex) {
+        makeError(iso, ex.what());
+        args.GetReturnValue().SetUndefined();
+    }
 }
