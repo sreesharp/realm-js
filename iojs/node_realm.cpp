@@ -85,6 +85,7 @@ void RealmWrap::Init(Handle<Object> exports) {
     NODE_SET_PROTOTYPE_METHOD(tpl, "create",    RealmWrap::CreateObject);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "write",     RealmWrap::Write);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "deleteAll", RealmWrap::DeleteAll);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "delete",    RealmWrap::Delete);
     NODE_SET_PROTOTYPE_METHOD(tpl, "close",     RealmWrap::Close);
     NODE_SET_PROTOTYPE_METHOD(tpl, "objects",   RealmWrap::Objects);
 
@@ -262,6 +263,47 @@ void RealmWrap::DeleteAll(const FunctionCallbackInfo<Value>& args) {
 	}
 	args.GetReturnValue().SetUndefined();
 }
+
+void delete_object(realm::SharedRealm realm, realm::Object* object) {
+    if (!realm->is_in_transaction()) {
+        throw std::runtime_error("Argument to 'delete' must be a Realm object or a collection of Realm objects.");
+    }
+
+    realm::TableRef table = realm::ObjectStore::table_for_object_type(realm->read_group(), object->get_object_schema().name);
+    table->move_last_over(object->row().get_index());  
+}
+
+void RealmWrap::Delete(const FunctionCallbackInfo<Value>& args) {
+    Isolate* iso = Isolate::GetCurrent();
+    
+    try {
+        ValidateArgumentCount(args.Length(), 1);
+
+        RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(args.This());
+        realm::SharedRealm realm = rw->m_realm;
+                
+        if (args[0]->IsArray()) { // or result or list
+            v8::Array* array = v8::Array::Cast(*args[0]);
+            size_t length = array->Length();
+            for (long i = length-1; i >= 0; i--) {
+                RealmObjectWrap* row = ObjectWrap::Unwrap<RealmObjectWrap>(args[0]->ToObject());
+                realm::Object* object = row->m_object;
+                delete_object(realm, object);              
+            }
+        }
+        
+        // FIXME: Check if RealmObject
+        RealmObjectWrap* row = ObjectWrap::Unwrap<RealmObjectWrap>(args[0]->ToObject());
+        realm::Object* object = row->m_object;
+        
+        delete_object(realm, object);
+    }
+    catch (std::exception& ex) {
+        makeError(iso, ex.what());
+    }
+    args.GetReturnValue().SetUndefined();
+}
+
 
 void RealmWrap::Close(const FunctionCallbackInfo<Value>& args) {
 	Isolate* iso = Isolate::GetCurrent();

@@ -36,3 +36,11 @@ var some = realm.objects('Person').filtered('id > 5');
 for (var i = 0; i < some.length; i++) {
     console.log(some[i].id + ': ' + some[i].name);
 }
+
+console.log('\n\nGet an object');
+var obj = realm.objects('Person')[5];
+console.log('Name: ' + obj.name);
+realm.write(function() {
+    realm.delete(obj)
+});
+console.log('Length: ' + realm.objects('Person').length);

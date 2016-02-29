@@ -26,6 +26,7 @@ public:
     static void CreateObject(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void Write(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void DeleteAll(const v8::FunctionCallbackInfo<v8::Value>& args);
+	static void Delete(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void Close(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void Objects(const v8::FunctionCallbackInfo<v8::Value>& args);
 	

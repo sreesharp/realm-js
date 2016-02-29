@@ -11,6 +11,7 @@
 #include "object_accessor.hpp"
 
 class RealmObjectWrap : public node::ObjectWrap {
+    friend class RealmWrap;
 public:
     RealmObjectWrap();
 
