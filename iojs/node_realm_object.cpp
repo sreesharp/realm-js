@@ -24,6 +24,7 @@ void RealmObjectWrap::Init(Handle<Object> exports) {
     Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, RealmObjectWrap::New);
     tpl->SetClassName(String::NewFromUtf8(isolate, "RealmObject"));
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
+    tpl->InstanceTemplate()->SetNamedPropertyHandler(RealmObjectWrap::Get, RealmObjectWrap::Set);
 
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "RealmObject"), tpl->GetFunction());

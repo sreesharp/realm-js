@@ -14,4 +14,6 @@ PersonObject.prototype.description = function() {
 
 var realm = new Realm({schema: [PersonObject]});
 var all = realm.objects('Person');
-console.log(all);
+for(var i = 0; i < all.length; i++) {
+    console.log(all[i].id + ': ' + all[i].name);
+}
