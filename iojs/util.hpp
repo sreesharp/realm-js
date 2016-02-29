@@ -40,9 +40,14 @@ static inline std::size_t ValidatedArrayLength(v8::Value *value) {
     return array->Length();
 }
 
-static inline void ValidateArgumentCount(std::size_t argc, std::size_t count) {
+static inline void ValidateArgumentCount(std::size_t argc, std::size_t count, const char* message = NULL) {
     if (argc != count) {
-        throw std::invalid_argument(std::to_string(count) + " argument(s) expected.");
+		if (message) {
+			throw std::invalid_argument(message);
+		}
+		else {
+        	throw std::invalid_argument(std::to_string(count) + " argument(s) expected.");
+		}
     }
 }
 static inline void ValidateArgumentRange(std::size_t argc, std::size_t min, std::size_t max) {

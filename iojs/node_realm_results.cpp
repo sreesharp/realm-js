@@ -31,6 +31,7 @@ void RealmResultsWrap::Init(Handle<Object> exports) {
     tpl->InstanceTemplate()->SetAccessor(ToString(isolate, "length"), RealmResultsWrap::GetLength, 0);
 
     NODE_SET_PROTOTYPE_METHOD(tpl, "filtered", RealmResultsWrap::Filtered);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "sorted",   RealmResultsWrap::Sorted);
 
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "RealmResults"), tpl->GetFunction());
@@ -124,6 +125,17 @@ Local<Value> RealmResultsWrap::Create(Isolate* ctx, realm::SharedRealm realm, st
     return scope.Escape(obj);
 }
 
+Local<Value> RealmResultsWrap::Create(Isolate* ctx, realm::SharedRealm realm, realm::Results* results) {
+    EscapableHandleScope scope(ctx);
+    
+    Local<Function> cons = Local<Function>::New(ctx, constructor);
+    Handle<Object> obj = cons->NewInstance(0, nullptr);
+    RealmResultsWrap* rrw = RealmResultsWrap::Unwrap<RealmResultsWrap>(obj);
+    rrw->m_results = results;
+    rrw->m_shared_realm = realm;
+    return scope.Escape(obj);
+}
+
 Local<Value> RealmResultsWrap::Create(Isolate* ctx, realm::SharedRealm realm, std::string className, std::string queryString, std::vector<Local<Value>> args) {
     EscapableHandleScope scope(ctx);
     
@@ -176,6 +188,60 @@ Local<Value> RealmResultsWrap::CreateFiltered(Isolate* ctx, realm::SharedRealm r
     return RealmResultsWrap::Create(ctx, realm, objectSchema, std::move(query));
 }
 
+Local<Value> RealmResultsWrap::CreateSorted(Isolate* ctx,  realm::SharedRealm realm, const realm::ObjectSchema& objectSchema, realm::Query query, size_t argumentCount, const FunctionCallbackInfo<Value>& arguments) {
+    size_t prop_count;
+    std::vector<std::string> prop_names;
+    std::vector<bool> ascending;
+    
+    if (arguments[0]->IsArray()) {
+        ValidateArgumentCount(argumentCount, 1, "Second argument is not allowed if passed an array of sort descriptors");
+        
+        Local<Object> js_prop_names = ValidatedValueToObject(ctx, arguments[0]);
+        prop_count = js_prop_names->GetOwnPropertyNames()->Length();
+        if (!prop_count) {
+            throw std::invalid_argument("Sort descriptor array must not be empty");
+        }
+
+        prop_names.resize(prop_count);
+        ascending.resize(prop_count);
+
+        for (unsigned int i = 0; i < prop_count; i++) {
+            Local<Value> val = js_prop_names->Get(i);
+            
+            if (val->IsArray()) {
+                v8::Array *arr = v8::Array::Cast(*val);
+                prop_names[i] = ValidatedStringForValue(ctx, arr->Get(0));
+                ascending[i] = !((arr->Get(1)->ToBoolean())->BooleanValue())    ;
+            }
+            else {
+                prop_names[i] = ValidatedStringForValue(ctx, val);
+                ascending[i] = true;
+            }
+        }
+    }
+    else {
+        ValidateArgumentRange(argumentCount, 1, 2);
+        prop_count = 1;
+        prop_names.push_back(ValidatedStringForValue(ctx, arguments[0]));
+        ascending.push_back(argumentCount == 1 ? true : !(arguments[1]->BooleanValue()));
+    }
+    
+    std::vector<size_t> columns(prop_count);
+    size_t index = 0;
+
+    for (std::string prop_name : prop_names) {
+        const realm::Property *prop = objectSchema.property_for_name(prop_name);
+        if (!prop) {
+            throw std::runtime_error("Property '" + prop_name + "' does not exist on object type '" + objectSchema.name + "'");
+        }
+        columns[index++] = prop->table_column;
+    }
+
+    realm::Results *results = new realm::Results(realm, objectSchema, std::move(query), {std::move(columns), std::move(ascending)});
+    return RealmResultsWrap::Create(ctx, realm, results);
+
+}
+
 void RealmResultsWrap::Filtered(const FunctionCallbackInfo<Value>& args) {
     Isolate* iso = Isolate::GetCurrent();
     
@@ -185,6 +251,25 @@ void RealmResultsWrap::Filtered(const FunctionCallbackInfo<Value>& args) {
         
         realm::SharedRealm sharedRealm = rrw->m_shared_realm;
         Local<Value> res = RealmResultsWrap::CreateFiltered(iso, sharedRealm, results->get_object_schema(), std::move(results->get_query()), args.Length(), args);
+        args.GetReturnValue().Set(res);
+    }
+    catch (std::exception& ex) {
+        makeError(iso, ex.what());
+        args.GetReturnValue().SetUndefined();
+    }
+}
+
+void RealmResultsWrap::Sorted(const FunctionCallbackInfo<Value>& args) {
+    Isolate* iso = Isolate::GetCurrent();
+    
+    try {
+        RealmResultsWrap* rrw = RealmResultsWrap::Unwrap<RealmResultsWrap>(args.This());
+        realm::Results* results = rrw->m_results;
+
+        ValidateArgumentRange(args.Length(), 1, 2);
+        
+        realm::SharedRealm sharedRealm = rrw->m_shared_realm;
+        Local<Value> res = RealmResultsWrap::CreateSorted(iso, sharedRealm, results->get_object_schema(), std::move(results->get_query()), args.Length(), args);
         args.GetReturnValue().Set(res);
     }
     catch (std::exception& ex) {

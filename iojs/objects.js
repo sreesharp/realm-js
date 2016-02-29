@@ -44,3 +44,8 @@ realm.write(function() {
     realm.delete(obj)
 });
 console.log('Length: ' + realm.objects('Person').length);
+
+console.log('\n\nSorted');
+var sorted = realm.objects('Person').sorted('id', true);
+console.log('First: ' + sorted[0].name);
+console.log('Last:  ' + sorted[8].name);

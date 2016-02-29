@@ -21,9 +21,12 @@ public:
     static v8::Local<v8::Value> Create(v8::Isolate*, realm::SharedRealm, std::string);
     static v8::Local<v8::Value> Create(v8::Isolate*, realm::SharedRealm, std::string, std::string, std::vector<v8::Local<v8::Value>>);
     static v8::Local<v8::Value> Create(v8::Isolate*, realm::SharedRealm, const realm::ObjectSchema&, const realm::Query&, bool);
+    static v8::Local<v8::Value> Create(v8::Isolate*, realm::SharedRealm, realm::Results*);
     static v8::Local<v8::Value> CreateFiltered(v8::Isolate*, realm::SharedRealm, const realm::ObjectSchema&, realm::Query, size_t, const v8::FunctionCallbackInfo<v8::Value>&);
+    static v8::Local<v8::Value> CreateSorted(v8::Isolate*, realm::SharedRealm, const realm::ObjectSchema&, realm::Query, size_t, const v8::FunctionCallbackInfo<v8::Value>&);
     
     static void Filtered(const v8::FunctionCallbackInfo<v8::Value>&);
+    static void Sorted(const v8::FunctionCallbackInfo<v8::Value>&);
 
     // getter - results are read-only
     static void Getter(uint32_t index, const v8::PropertyCallbackInfo<v8::Value>& info);
