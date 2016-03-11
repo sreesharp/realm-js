@@ -11,6 +11,7 @@
 #include "node_realm.hpp"
 #include "node_realm_object.hpp"
 #include "node_realm_schema.hpp"
+#include "node_realm_list.hpp"
 
 using namespace v8;
 
@@ -68,6 +69,10 @@ Handle<Object> RealmObjectWrap::Create(Isolate* ctx, realm::Object* object) {
     return scope.Escape(obj);
 }
 
+realm::Object* RealmObjectWrap::GetObject() {
+    return m_object;
+}
+
 using NullType = std::nullptr_t;
 using ValueType = Local<Value>;
 using IsolateType = Isolate*;
@@ -112,7 +117,7 @@ template<> bool Accessor::dict_has_value_for_key(IsolateType ctx, ValueType dict
 
 template<> ValueType Accessor::dict_value_for_key(IsolateType ctx, ValueType dict, const std::string &prop_name) {
     Local<v8::Object> object = ValidatedValueToObject(ctx, dict);
-    return dict->ToObject()->Get(ToString(ctx, prop_name.c_str()));
+    return object->Get(ToString(ctx, prop_name.c_str()));
 }
 
 template<> bool Accessor::has_default_value_for_property(IsolateType ctx, Realm* realm, const ObjectSchema &object_schema, const std::string &prop_name) {
@@ -191,11 +196,19 @@ template<> DateTime Accessor::to_datetime(IsolateType ctx, ValueType &val) {
 }
 
 template<> size_t Accessor::to_object_index(IsolateType ctx, SharedRealm realm, ValueType &val, const std::string &type, bool try_update) {
-    if (val->IsObject() && val->ToObject()->InternalFieldCount() > 0) {
-        RealmObjectWrap::GetObject(val->ToObject())->row().get_index();
-    }
+    Local<v8::Object> object = ValidatedValueToObject(ctx, val);
 
+    // FIXME: check class (is RealmObject) - for now, check if prototype has 'schema'
+    Local<v8::Object> prototype = object->GetPrototype()->ToObject();
+    if (prototype->Has(ToString(ctx, "schema"))) {
+        RealmObjectWrap* row = RealmObjectWrap::Unwrap<RealmObjectWrap>(object);
+        return row->GetObject()->row().get_index();
+    }
+    
     auto object_schema = realm->config().schema->find(type);
+    if (object->IsArray()) {
+        object = DictForPropertyArray(ctx, *object_schema, Local<v8::Array>::Cast(object));
+    }
     Object child = Object::create<ValueType, IsolateType>(ctx, realm, *object_schema, val, try_update);
     return child.row().get_index();
 }
@@ -210,7 +223,7 @@ template<> ValueType Accessor::list_value_at_index(IsolateType ctx, ValueType &v
 }
 
 template<> ValueType Accessor::from_list(IsolateType ctx, List list) {
-    // FIXME: implement
+    return RealmListWrap::Create(ctx, list);
 }
 
 } // namespace realm

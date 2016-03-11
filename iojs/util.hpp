@@ -2,13 +2,16 @@
  * Proprietary and Confidential.
  */
 
-#ifndef _NODE_REALM_UTIL_H_
-#define _NODE_REALM_UTIL_H_
+#ifndef NODE_REALM_UTIL_H
+#define NODE_REALM_UTIL_H
 
 #include <v8.h>
 
 #include <string>
 #include <exception>
+#include <sstream>
+
+#include "object_store.hpp"
 
 static inline void makeError(v8::Isolate *ctx, std::string mesg) {
     // FIXME: TypeError isn't always the appropriate exception

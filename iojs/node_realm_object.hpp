@@ -22,7 +22,7 @@ public:
     static void Get(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value>&);
     static void Set(v8::Local<v8::String>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<v8::Value>&);
 
-    static realm::Object* GetObject(v8::Local<v8::Object> self);
+    realm::Object* GetObject();
 private:
     ~RealmObjectWrap();
 
