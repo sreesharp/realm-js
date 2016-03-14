@@ -23,10 +23,13 @@ public:
     static void Set(v8::Local<v8::String>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<v8::Value>&);
 
     realm::Object* GetObject();
+    static v8::Local<v8::FunctionTemplate> GetTemplate();
+    
 private:
     ~RealmObjectWrap();
 
     static v8::Persistent<v8::Function> constructor;
+    static v8::Local<v8::FunctionTemplate> m_template;
 
     realm::Object* m_object;
 };

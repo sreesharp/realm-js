@@ -16,6 +16,7 @@
 using namespace v8;
 
 Persistent<Function> RealmObjectWrap::constructor;
+Local<FunctionTemplate> RealmObjectWrap::m_template;
 RealmObjectWrap::RealmObjectWrap() : m_object(0) {}
 RealmObjectWrap::~RealmObjectWrap() {}
 
@@ -29,6 +30,8 @@ void RealmObjectWrap::Init(Handle<Object> exports) {
 
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "RealmObject"), tpl->GetFunction());
+
+    m_template = tpl;
 }
 
 void RealmObjectWrap::New(const FunctionCallbackInfo<Value>& args) {
@@ -71,6 +74,10 @@ Handle<Object> RealmObjectWrap::Create(Isolate* ctx, realm::Object* object) {
 
 realm::Object* RealmObjectWrap::GetObject() {
     return m_object;
+}
+
+Local<FunctionTemplate> RealmObjectWrap::GetTemplate() {
+    return m_template;
 }
 
 using NullType = std::nullptr_t;
@@ -199,8 +206,7 @@ template<> size_t Accessor::to_object_index(IsolateType ctx, SharedRealm realm, 
     Local<v8::Object> object = ValidatedValueToObject(ctx, val);
 
     // FIXME: check class (is RealmObject) - for now, check if prototype has 'schema'
-    Local<v8::Object> prototype = object->GetPrototype()->ToObject();
-    if (prototype->Has(ToString(ctx, "schema"))) {
+    if (RealmObjectWrap::GetTemplate()->HasInstance(object)) {
         RealmObjectWrap* row = RealmObjectWrap::Unwrap<RealmObjectWrap>(object);
         return row->GetObject()->row().get_index();
     }
