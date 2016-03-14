@@ -24,6 +24,7 @@
 #include "platform.hpp"
 
 #include "shared_realm.hpp"
+#include "impl/realm_coordinator.hpp"
 #include "object_accessor.hpp"
 #include "binding_context.hpp"
 
@@ -200,6 +201,11 @@ JSObjectRef RealmConstructor(JSContextRef ctx, JSObjectRef constructor, size_t a
             *jsException = RJSMakeError(ctx, "Invalid arguments when constructing 'Realm'");
             return NULL;
         }
+        
+        if (config.path.size() && config.path[0] != '/') {
+            config.path = default_realm_file_directory() + "/" + config.path;
+        }
+        
         ensure_directory_exists_for_file(config.path);
         SharedRealm realm = Realm::get_shared_realm(config);
         if (!realm->m_binding_context) {
@@ -217,16 +223,22 @@ JSObjectRef RealmConstructor(JSContextRef ctx, JSObjectRef constructor, size_t a
     }
 }
 
+bool RealmHasInstance(JSContextRef ctx, JSObjectRef constructor, JSValueRef value, JSValueRef* exception) {
+    return JSValueIsObjectOfClass(ctx, value, RJSRealmClass());
+}
+
+static const JSStaticValue RealmStaticProperties[] = {
+    {"defaultPath", GetDefaultPath, SetDefaultPath, kJSPropertyAttributeDontEnum | kJSPropertyAttributeDontDelete},
+    {NULL, NULL}
+};
+
 JSClassRef RJSRealmConstructorClass() {
     JSClassDefinition realmConstructorDefinition = kJSClassDefinitionEmpty;
-    realmConstructorDefinition.className = "Realm";
+    realmConstructorDefinition.attributes = kJSClassAttributeNoAutomaticPrototype;
+    realmConstructorDefinition.className = "RealmConstructor";
     realmConstructorDefinition.callAsConstructor = RealmConstructor;
-
-    JSStaticValue realmStaticProperties[] = {
-        {"defaultPath", GetDefaultPath, SetDefaultPath, kJSPropertyAttributeDontEnum | kJSPropertyAttributeDontDelete},
-        {NULL, NULL}
-    };
-    realmConstructorDefinition.staticValues = realmStaticProperties;
+    realmConstructorDefinition.hasInstance = RealmHasInstance;
+    realmConstructorDefinition.staticValues = RealmStaticProperties;
     return JSClassCreate(&realmConstructorDefinition);
 }
 
@@ -243,11 +255,28 @@ JSValueRef RealmGetProperty(JSContextRef ctx, JSObjectRef object, JSStringRef pr
     return NULL;
 }
 
+std::string RJSValidatedObjectTypeForValue(SharedRealm &realm, JSContextRef ctx, JSValueRef value) {
+    if (JSValueIsObject(ctx, value) && JSObjectIsConstructor(ctx, (JSObjectRef)value)) {
+        JSObjectRef constructor = (JSObjectRef)value;
+
+        for (auto pair : RJSConstructors(realm.get())) {
+            if (pair.second == constructor) {
+                return pair.first;
+            }
+        }
+
+        throw std::runtime_error("Constructor was not registered in the schema for this Realm");
+    }
+
+    return RJSValidatedStringForValue(ctx, value, "objectType");
+}
+
 JSValueRef RealmObjects(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* jsException) {
     try {
-        RJSValidateArgumentCount(1, argumentCount);
-        std::string className = RJSValidatedStringForValue(ctx, arguments[0], "objectType");
+        RJSValidateArgumentCount(argumentCount, 1);
+
         SharedRealm sharedRealm = *RJSGetInternal<SharedRealm *>(thisObject);
+        std::string className = RJSValidatedObjectTypeForValue(sharedRealm, ctx, arguments[0]);
         return RJSResultsCreate(ctx, sharedRealm, className);
     }
     catch (std::exception &exp) {
@@ -285,10 +314,12 @@ JSValueRef RealmCreateObject(JSContextRef ctx, JSObjectRef function, JSObjectRef
     try {
         RJSValidateArgumentRange(argumentCount, 2, 3);
 
-        std::string className = RJSValidatedStringForValue(ctx, arguments[0], "objectType");
         SharedRealm sharedRealm = *RJSGetInternal<SharedRealm *>(thisObject);
-        auto object_schema = sharedRealm->config().schema->find(className);
-        if (object_schema == sharedRealm->config().schema->end()) {
+        std::string className = RJSValidatedObjectTypeForValue(sharedRealm, ctx, arguments[0]);
+        auto &schema = sharedRealm->config().schema;
+        auto object_schema = schema->find(className);
+
+        if (object_schema == schema->end()) {
             *jsException = RJSMakeError(ctx, "Object type '" + className + "' not found in schema.");
             return NULL;
         }
@@ -474,8 +505,6 @@ JSValueRef RealmClose(JSContextRef ctx, JSObjectRef function, JSObjectRef thisOb
         RJSValidateArgumentCount(argumentCount, 0);
         SharedRealm realm = *RJSGetInternal<SharedRealm *>(thisObject);
         realm->close();
-        realm::Realm::s_global_cache.remove(realm->config().path, realm->thread_id());
-
     }
     catch (std::exception &exp) {
         if (jsException) {
