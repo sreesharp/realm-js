@@ -104,7 +104,7 @@ void RealmListWrap::Getter(uint32_t index, const PropertyCallbackInfo<Value>& in
     try {
         RealmListWrap* rlw = ObjectWrap::Unwrap<RealmListWrap>(info.This());
         realm::List* list = rlw->m_list;
-        info.GetReturnValue().Set(RealmObjectWrap::Create(iso, new realm::Object(list->realm(), list->get_object_schema(), list->get(index))));
+        info.GetReturnValue().Set(RealmObjectWrap::Create(iso, new realm::Object(list->get_realm(), list->get_object_schema(), list->get(index))));
     }
     catch (std::out_of_range &exp) {
         // getters for nonexistent properties in JS should always return undefined
@@ -169,12 +169,12 @@ void RealmListWrap::Pop(const FunctionCallbackInfo<Value>& args) {
 
         std::size_t size = list->size();
         if (size == 0) {
-            list->verify_in_tranaction();
+            list->verify_in_transaction();
             args.GetReturnValue().SetUndefined();
             return;
         }
         std::size_t index = size - 1;
-        Local<v8::Object> object = RealmObjectWrap::Create(iso, new realm::Object(list->realm(), list->get_object_schema(), list->get(index)));
+        Local<v8::Object> object = RealmObjectWrap::Create(iso, new realm::Object(list->get_realm(), list->get_object_schema(), list->get(index)));
         args.GetReturnValue().Set(object);
         list->remove(index);
     }
@@ -212,11 +212,11 @@ void RealmListWrap::Shift(const FunctionCallbackInfo<Value>& args) {
         realm::List* list = rlw->m_list;
         ValidateArgumentCount(args.Length(), 0);
         if (list->size() == 0) {
-            list->verify_in_tranaction();
+            list->verify_in_transaction();
             args.GetReturnValue().SetUndefined();
             return;
         }
-        Local<v8::Object> object = RealmObjectWrap::Create(iso, new realm::Object(list->realm(), list->get_object_schema(), list->get(0)));
+        Local<v8::Object> object = RealmObjectWrap::Create(iso, new realm::Object(list->get_realm(), list->get_object_schema(), list->get(0)));
         args.GetReturnValue().Set(object);
         list->remove(0);
     }
@@ -246,7 +246,7 @@ void RealmListWrap::Splice(const FunctionCallbackInfo<Value>& args) {
 
         std::vector<Local<v8::Object>> removedObjects(remove);
         for (int i = 0; i < remove; i++) {
-            removedObjects[i] = RealmObjectWrap::Create(iso, new realm::Object(list->realm(), list->get_object_schema(), list->get(index)));
+            removedObjects[i] = RealmObjectWrap::Create(iso, new realm::Object(list->get_realm(), list->get_object_schema(), list->get(index)));
             list->remove(index);
         }
         for (int i = 2; i < args.Length(); i++) {
@@ -274,7 +274,7 @@ void RealmListWrap::StaticResults(const FunctionCallbackInfo<Value>& args) {
 
         ValidateArgumentCount(args.Length(), 0);
 
-        args.GetReturnValue().Set(RealmResultsWrap::Create(iso, list->realm(), list->get_object_schema(), std::move(list->get_query()), false));
+        args.GetReturnValue().Set(RealmResultsWrap::Create(iso, list->get_realm(), list->get_object_schema(), std::move(list->get_query()), false));
     }
     catch  (std::exception& ex) {
         makeError(iso, ex.what());
@@ -290,7 +290,7 @@ void RealmListWrap::Filtered(const FunctionCallbackInfo<Value>& args) {
         RealmListWrap* rlw = ObjectWrap::Unwrap<RealmListWrap>(args.This());
         realm::List* list = rlw->m_list;
         ValidateArgumentCountIsAtLeast(args.Length(), 1);
-        args.GetReturnValue().Set(RealmResultsWrap::CreateFiltered(iso, list->realm(), list->get_object_schema(), std::move(list->get_query()), args.Length(), args));
+        args.GetReturnValue().Set(RealmResultsWrap::CreateFiltered(iso, list->get_realm(), list->get_object_schema(), std::move(list->get_query()), args.Length(), args));
     }
     catch  (std::exception& ex) {
         makeError(iso, ex.what());
@@ -306,7 +306,7 @@ void RealmListWrap::Sorted(const FunctionCallbackInfo<Value>& args) {
         RealmListWrap* rlw = ObjectWrap::Unwrap<RealmListWrap>(args.This());
         realm::List* list = rlw->m_list;
         ValidateArgumentRange(args.Length(), 1, 2);
-        args.GetReturnValue().Set(RealmResultsWrap::CreateFiltered(iso, list->realm(), list->get_object_schema(), std::move(list->get_query()), args.Length(), args));
+        args.GetReturnValue().Set(RealmResultsWrap::CreateFiltered(iso, list->get_realm(), list->get_object_schema(), std::move(list->get_query()), args.Length(), args));
     }
     catch  (std::exception& ex) {
         makeError(iso, ex.what());
