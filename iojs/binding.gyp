@@ -11,7 +11,7 @@
                 "../src/object-store/src/schema.cpp",
                 "../src/object-store/src/shared_realm.cpp",
                 "../src/object-store/src/impl/transact_log_handler.cpp",
-                "../src/object-store/src/impl/apple/external_commit_helper.cpp",
+                "../src/object-store/src/impl/realm_coordinator.cpp",
                 "../src/object-store/src/parser/parser.cpp",
                 "../src/object-store/src/parser/query_builder.cpp",
                 "node_init.cpp",
@@ -27,7 +27,7 @@
                 "../src/object-store/src/impl",
                 "../src/object-store/src/impl/apple",
                 "../src/object-store/src/parser",
-                "../vendor/PEGTL"
+                "../src/object-store/external/pegtl"
             ],
             "cflags_cc": [ '-DREALM_HAVE_CONFIG', '-fexceptions', '-frtti', '-std=c++14', '-g', '-O0'],
             "ldflags": [ '-L../core/', '-lrealm' ],
