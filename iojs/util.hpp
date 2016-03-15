@@ -184,6 +184,15 @@ static inline std::size_t ValidatedListLength(v8::Isolate* ctx, v8::Local<v8::Ob
     return ValidatedValueToNumber(ctx, length_value);
 }
 
+
+static inline std::string ValidatedNotificationName(v8::Isolate* ctx, v8::Local<v8::Value> value) {
+    std::string name = ValidatedStringForValue(ctx, value);
+    if (name != "change") {
+        throw std::runtime_error("Only the 'change' notification name is supported.");
+    }
+    return name;
+}
+
 static v8::Local<v8::Object> DictForPropertyArray(v8::Isolate* iso, realm::ObjectSchema &object_schema, v8::Local<v8::Array> array) {
     if (object_schema.properties.size() != array->Length()) {
         throw std::runtime_error("Array must contain values for all object properties.");

@@ -23,12 +23,16 @@ public:
 
     static void Init(v8::Handle<v8::Object> exports);
     static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static v8::Handle<v8::Object> Create(v8::Isolate* , realm::SharedRealm*);
     static void CreateObject(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void Write(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void DeleteAll(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void Delete(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void Close(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void Objects(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void AddListener(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void RemoveListener(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void RemoveAllListeners(const v8::FunctionCallbackInfo<v8::Value>& args);
 	
 private:
     ~RealmWrap();

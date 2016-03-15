@@ -23,7 +23,6 @@
 
 using namespace v8;
 
-// FIXME: incomplete!
 class NodeRealmDelegate : public realm::BindingContext {
 public:
     virtual void changes_available() {
@@ -47,18 +46,67 @@ public:
         remove_all_notifications();
     };
 
-    void add_notification(Handle<Object> notification) {};
-    void remove_notification(Handle<Object> notification) {};
-    void remove_all_notifications() {};
+    void add_notification(Handle<Function> notification) {
+        if (has_notification(notification) == -1) {
+            // FIXME: protect?
+            CopyablePersistentTraits<Value>::CopyablePersistent p_object;
+            p_object.Reset(m_context, notification);
+            m_notifications.push_back(p_object);
+        }
+    };
+
+    void remove_notification(Handle<Function> notification) {
+        auto pos = has_notification(notification);
+        if (pos >= 0) {
+            // FIXME: unprotect
+            //m_notifications.erase(std::remove(m_notifications.begin(), m_notifications.end(), notification), m_notifications.end());
+        }
+    };
+    
+    void remove_all_notifications() {
+        //for (auto notification : m_notifications) {
+            // FIXME: unprotect
+        //}
+        m_notifications.clear();
+    };
     
     std::map<std::string, realm::ObjectDefaults> m_defaults;
     std::map<std::string, Local<Value>> m_prototypes;
 
 private:
+    std::vector<CopyablePersistentTraits<Value>::CopyablePersistent> m_notifications;
     Isolate* m_context;
     realm::WeakRealm m_realm;
 
-    void notify(const char* notification_name) {};
+    void notify(const char* notification_name) {
+        realm::SharedRealm realm = m_realm.lock();
+        if (!realm) {
+            throw std::runtime_error("Realm no longer exists");
+        }
+        
+        Handle<Value> arguments[] = { RealmWrap::Create(m_context, new realm::SharedRealm(m_realm)), ToString(m_context, notification_name) };
+        for (size_t i = 0; i < m_notifications.size(); i++) {
+            TryCatch trycatch;
+            Local<Value> tmp = Local<Value>::New(m_context, m_notifications[i]);
+            Local<Function> fun = Local<Function>::Cast(tmp);
+            fun->Call(v8::Context::New(m_context)->Global(), 2, arguments);
+            if (trycatch.HasCaught()) {
+                throw std::runtime_error(ToString(trycatch.Message()->Get()));
+            }
+        }
+    };
+
+    int has_notification(Handle<Function> new_notification) {
+        int pos = 0;
+        while (pos  < m_notifications.size()) {
+            Local<Function> tmp = Local<Function>::Cast(Local<Value>::New(m_context, m_notifications[pos]));
+            if (tmp->Equals(new_notification)) {
+                return pos;
+            }
+            pos++;
+        }
+        return -1;
+    }
 };
 
 std::map<std::string, realm::ObjectDefaults> &NodeDefaults(realm::Realm *realm) {
@@ -88,7 +136,10 @@ void RealmWrap::Init(Handle<Object> exports) {
     NODE_SET_PROTOTYPE_METHOD(tpl, "delete",    RealmWrap::Delete);
     NODE_SET_PROTOTYPE_METHOD(tpl, "close",     RealmWrap::Close);
     NODE_SET_PROTOTYPE_METHOD(tpl, "objects",   RealmWrap::Objects);
-
+    NODE_SET_PROTOTYPE_METHOD(tpl, "addListener", RealmWrap::AddListener);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "removeListener", RealmWrap::RemoveListener);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "removeAllListeners", RealmWrap::RemoveAllListeners);
+    
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "Realm"), tpl->GetFunction());
 }
@@ -178,6 +229,17 @@ void RealmWrap::New(const FunctionCallbackInfo<Value>& args) {
     } else {
         // FIXME: Invoked as plain function `Realm(...)`, turn into construct call.
     }
+}
+
+Handle<Object> RealmWrap::Create(Isolate* ctx, realm::SharedRealm* realm) {
+    EscapableHandleScope scope(ctx);
+
+    Local<Function> cons = Local<Function>::New(ctx, constructor);
+    Handle<Object> obj = cons->NewInstance(0, nullptr);
+    
+    RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(obj);
+    rw->m_realm = *realm;
+    return scope.Escape(obj);
 }
 
 void RealmWrap::CreateObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -338,4 +400,62 @@ void RealmWrap::Objects(const FunctionCallbackInfo<Value>& args) {
         makeError(iso, ex.what());
         args.GetReturnValue().SetUndefined();
     }
+}
+
+void RealmWrap::AddListener(const FunctionCallbackInfo<Value>& args) {
+    Isolate* iso = Isolate::GetCurrent();
+    HandleScope scope(iso);
+
+    try {
+        ValidateArgumentCount(args.Length(), 2);
+        __unused std::string name = ValidatedNotificationName(iso, args[0]);
+        Local<Function> callback = ValidatedValueToFunction(iso, args[1]);
+
+        RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(args.This());
+        realm::SharedRealm realm = rw->m_realm;
+        static_cast<NodeRealmDelegate*>(realm->m_binding_context.get())->add_notification(callback);
+    }
+    catch (std::exception& ex) {
+        makeError(iso, ex.what());
+    }
+    args.GetReturnValue().SetUndefined();
+}
+
+void RealmWrap::RemoveListener(const FunctionCallbackInfo<Value>& args) {
+    Isolate* iso = Isolate::GetCurrent();
+    HandleScope scope(iso);
+
+    try {
+        ValidateArgumentCount(args.Length(), 2);
+        __unused std::string name = ValidatedNotificationName(iso, args[0]);
+        Local<Function> callback = ValidatedValueToFunction(iso, args[1]);
+
+        RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(args.This());
+        realm::SharedRealm realm = rw->m_realm;
+        static_cast<NodeRealmDelegate*>(realm->m_binding_context.get())->remove_notification(callback);        
+    }
+    catch (std::exception& ex) {
+        makeError(iso, ex.what());
+    }
+    args.GetReturnValue().SetUndefined();
+}
+
+void RealmWrap::RemoveAllListeners(const FunctionCallbackInfo<Value>& args) {
+    Isolate* iso = Isolate::GetCurrent();
+    HandleScope scope(iso);
+
+    try {
+        ValidateArgumentRange(args.Length(), 0, 1);
+        if (args.Length()) {
+            ValidatedNotificationName(iso, args[0]);
+        }
+
+        RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(args.This());
+        realm::SharedRealm realm = rw->m_realm;
+        static_cast<NodeRealmDelegate*>(realm->m_binding_context.get())->remove_all_notifications();        
+    }
+    catch (std::exception& ex) {
+        makeError(iso, ex.what());
+    }
+    args.GetReturnValue().SetUndefined();
 }
