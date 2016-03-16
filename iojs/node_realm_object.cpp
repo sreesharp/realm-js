@@ -219,6 +219,11 @@ template<> size_t Accessor::to_object_index(IsolateType ctx, SharedRealm realm, 
     return child.row().get_index();
 }
 
+template<> ValueType Accessor::from_object(IsolateType ctx, realm::Object object) {
+    return RealmObjectWrap::Create(ctx, new realm::Object(object));
+}
+
+
 template<> size_t Accessor::list_size(IsolateType ctx, ValueType &val) {
     return ValidatedArrayLength(*val);
 }
