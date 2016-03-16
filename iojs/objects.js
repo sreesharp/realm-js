@@ -49,3 +49,14 @@ console.log('\n\nSorted');
 var sorted = realm.objects('Person').sorted('id', true);
 console.log('First: ' + sorted[0].name);
 console.log('Last:  ' + sorted[8].name);
+
+realm.write(function() {
+  realm.create('Person', {'name': 'John', 'id': 42});
+});
+
+console.log('\n\nLength: ' + realm.objects('Person').length);
+var john = realm.objects('Person').filtered('name = "John"');
+console.log('Johns: ' + john.length);
+for (var i = 0; i < john.length; i++) {
+  console.log(i + ' : ' + john[i].id);
+}

@@ -8,7 +8,7 @@ function PersonObject() {}
 PersonObject.prototype.schema = {
   name: 'Person',
   properties: [
-    {name: 'name', type: Realm.Types.STRING},
+    {name: 'name', type: Realm.Types.STRING, default: 'Kim'},
     {name: 'id',   type: Realm.Types.INT, optional: true}
   ]
 };
@@ -24,6 +24,7 @@ realm.write(function() {
   realm.create('Person', {'name': 'Jim', 'id': null});
   realm.create('Person', {'name': 'John', 'id': 2});
   realm.create('Person', {'id': 4, 'name': 'Sarah'});
+  realm.create('Person', {'id': 5});
 });
 
 

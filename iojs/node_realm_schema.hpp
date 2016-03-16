@@ -14,7 +14,7 @@
 
 namespace realm {
     class Schema;
-    using ObjectDefaults = std::map<std::string, v8::Handle<v8::Value>>;
+    using ObjectDefaults = std::map<std::string, v8::CopyablePersistentTraits<v8::Value>::CopyablePersistent>;
 }
 
 class RealmSchemaWrap : public node::ObjectWrap {

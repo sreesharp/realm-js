@@ -130,9 +130,9 @@ realm::Property ParseProperty(Isolate* iso, Local<Value> propertyAttributes, std
         if (propertyObject->Has(ToString(iso, "default"))) {
             Local<Value> defaultValue = propertyObject->Get(ToString(iso, "default"));
             // FIXME: JSValueProtect(ctx, defaultValue)
-            Persistent<Value> p_object;
+            CopyablePersistentTraits<Value>::CopyablePersistent p_object;
             p_object.Reset(iso, defaultValue);
-            objectDefaults.emplace(prop.name, defaultValue);
+            objectDefaults.emplace(prop.name, p_object);
         }
     }
 

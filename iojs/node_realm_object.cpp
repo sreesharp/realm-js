@@ -110,7 +110,7 @@ void RealmObjectWrap::Set(Local<String> name, Local<Value> value, const Property
         auto object = row->m_object;
         object->set_property_value<ValueType, IsolateType>(iso, ToString(name), value, true);
     } catch (std::exception& ex) {
-        makeError(iso, ex);
+        makeError(iso, ex.what());
     }
     info.GetReturnValue().SetUndefined();
 }
@@ -128,13 +128,13 @@ template<> ValueType Accessor::dict_value_for_key(IsolateType ctx, ValueType dic
 }
 
 template<> bool Accessor::has_default_value_for_property(IsolateType ctx, Realm* realm, const ObjectSchema &object_schema, const std::string &prop_name) {
-    ObjectDefaults &defaults = RealmSchemaWrap::DefaultsForClassName(object_schema.name);
+    ObjectDefaults &defaults = NodeDefaults(realm)[object_schema.name];
     return defaults.find(prop_name) != defaults.end();
 }
 
 template<> ValueType Accessor::default_value_for_property(IsolateType ctx, Realm* realm, const ObjectSchema &object_schema, const std::string &prop_name) {
-    ObjectDefaults &defaults = RealmSchemaWrap::DefaultsForClassName(object_schema.name);
-    return defaults[prop_name];
+    ObjectDefaults &defaults = NodeDefaults(realm)[object_schema.name];
+    return Local<Value>::New(ctx, defaults[prop_name]);
 }
 
 template<> bool Accessor::is_null(IsolateType ctx, ValueType &val) {
@@ -222,7 +222,6 @@ template<> size_t Accessor::to_object_index(IsolateType ctx, SharedRealm realm, 
 template<> ValueType Accessor::from_object(IsolateType ctx, realm::Object object) {
     return RealmObjectWrap::Create(ctx, new realm::Object(object));
 }
-
 
 template<> size_t Accessor::list_size(IsolateType ctx, ValueType &val) {
     return ValidatedArrayLength(*val);
