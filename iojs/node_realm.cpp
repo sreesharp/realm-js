@@ -117,7 +117,7 @@ std::map<std::string, Local<Value>> &NodePrototypes(realm::Realm *realm) {
     return static_cast<NodeRealmDelegate *>(realm->m_binding_context.get())->m_prototypes;
 }
 
-static std::string s_defaultPath = "/tmp/default.realm";
+static std::string s_defaultPath = "default.realm";
 
 Persistent<Function> RealmWrap::constructor;
 RealmWrap::RealmWrap() {}
@@ -139,6 +139,9 @@ void RealmWrap::Init(Handle<Object> exports) {
     NODE_SET_PROTOTYPE_METHOD(tpl, "addListener", RealmWrap::AddListener);
     NODE_SET_PROTOTYPE_METHOD(tpl, "removeListener", RealmWrap::RemoveListener);
     NODE_SET_PROTOTYPE_METHOD(tpl, "removeAllListeners", RealmWrap::RemoveAllListeners);
+
+    tpl->InstanceTemplate()->SetAccessor(ToString(isolate, "defaultPath"), RealmWrap::GetDefaultPath, RealmWrap::SetDefaultPath);
+    tpl->InstanceTemplate()->SetAccessor(ToString(isolate, "path"), RealmWrap::GetPath, 0);
     
     constructor.Reset(isolate, tpl->GetFunction());
     exports->Set(String::NewFromUtf8(isolate, "Realm"), tpl->GetFunction());
@@ -240,6 +243,35 @@ Handle<Object> RealmWrap::Create(Isolate* ctx, realm::SharedRealm* realm) {
     RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(obj);
     rw->m_realm = *realm;
     return scope.Escape(obj);
+}
+
+void RealmWrap::GetDefaultPath(Local<String> property, const PropertyCallbackInfo<Value>& info) {
+    Isolate* iso = Isolate::GetCurrent();
+    HandleScope scope(iso);
+
+    info.GetReturnValue().Set(ToString(iso, s_defaultPath.c_str()));
+}
+
+void RealmWrap::SetDefaultPath(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
+    Isolate* iso = Isolate::GetCurrent();
+    HandleScope scope(iso);
+
+    try {
+        s_defaultPath = ToString(value);
+    }
+    catch (std::exception &ex) {
+        makeError(iso, ex.what());
+        info.GetReturnValue().SetUndefined();
+    }
+}
+
+void RealmWrap::GetPath(Local<String> property, const PropertyCallbackInfo<Value>& info) {
+    Isolate* iso = Isolate::GetCurrent();
+    HandleScope scope(iso);
+    RealmWrap* rw = ObjectWrap::Unwrap<RealmWrap>(info.This());
+    realm::SharedRealm shared_realm = rw->m_realm;
+
+    info.GetReturnValue().Set(ToString(iso, shared_realm.get()->config().path.c_str()));
 }
 
 void RealmWrap::CreateObject(const v8::FunctionCallbackInfo<v8::Value>& args) {

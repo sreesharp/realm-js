@@ -33,7 +33,11 @@ public:
     static void AddListener(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void RemoveListener(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void RemoveAllListeners(const v8::FunctionCallbackInfo<v8::Value>& args);
-	
+
+    static void SetDefaultPath(v8::Local<v8::String>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<void>&);
+    static void GetDefaultPath(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value>&);
+    static void GetPath(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value>&);
+    
 private:
     ~RealmWrap();
 

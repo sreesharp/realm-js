@@ -8,5 +8,8 @@ global.Realm.Types = {
 	'DATE': 	'date',
 	'DATA': 	'data',
 	'OBJECT': 	'object',
-	'LIST': 	'list',
+	'LIST': 	'list'
 };
+global.Realm.defaultPath = 'default.realm'; // FIXME: also defined in node_realm.cpp
+
+global.Realm;
