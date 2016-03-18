@@ -272,7 +272,7 @@ void RealmWrap::CreateObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
         Local<Object> wrapped = RealmObjectWrap::Create(iso, new realm::Object(object));
         args.GetReturnValue().Set(wrapped);
     } catch (std::exception& ex) {
-        makeError(iso, ex);
+        makeError(iso, ex.what());
         args.GetReturnValue().SetUndefined();
         return;
     }
