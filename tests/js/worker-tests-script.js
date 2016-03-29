@@ -21,7 +21,21 @@
 
 'use strict';
 
-const Realm = require('../..');
+if (typeof process == 'object' && ('' + process) == '[object process]') {
+    process.on('message', (message) => {
+        process.send(handleMessage(message));
+    });
+} else {
+    // A React Native worker requires the preamble provided by this module.
+    require('react-native');
+
+    global.onmessage = function(event) {
+        global.postMessage(handleMessage(event.data));
+    };
+}
+
+// We must require Realm after the react-native preamble.
+const Realm = require('realm');
 
 const handlers = {
     create(options) {
@@ -32,10 +46,6 @@ const handlers = {
         });
     }
 };
-
-process.on('message', (message) => {
-    process.send(handleMessage(message));
-});
 
 function handleMessage(message) {
     let error, result;

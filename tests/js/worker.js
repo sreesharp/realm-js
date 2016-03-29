@@ -20,25 +20,54 @@
 
 'use strict';
 
-class Worker {
-    constructor(script) {
-        this._process = require('child_process').fork(script);
+if (typeof process == 'object' && ('' + process) == '[object process]') {
+    class Worker {
+        constructor(script) {
+            this._process = require('child_process').fork(script);
 
-        this._process.on('message', (message) => {
-            if (this.onmessage) {
-                this.onmessage(message);
+            this._process.on('message', (message) => {
+                if (this.onmessage) {
+                    this.onmessage(message);
+                }
+            });
+        }
+        postMessage(message) {
+            this._process.send(message);
+        }
+        terminate() {
+            if (this._process) {
+                this._process.kill();
+                delete this._process;
             }
-        });
-    }
-    postMessage(message) {
-        this._process.send(message);
-    }
-    terminate() {
-        if (this._process) {
-            this._process.kill();
-            delete this._process;
         }
     }
-}
 
-module.exports = Worker;
+    module.exports = Worker;
+} else {
+    const {
+        nativeStartWorker,
+        nativePostMessageToWorker,
+        nativeTerminateWorker,
+    } = global;
+
+    class Worker {
+        constructor(script) {
+            this.id = nativeStartWorker(script, this, {
+                __fbBatchedBridgeConfig,  // eslint-disable-line no-undef
+            });
+        }
+        postMessage(message) {
+            if (this.id) {
+                nativePostMessageToWorker(this.id, message);
+            }
+        }
+        terminate() {
+            if (this.id) {
+                nativeTerminateWorker(this.id);
+                delete this.id;
+            }
+        }
+    }
+
+    module.exports = Worker;
+}

@@ -20,10 +20,12 @@
 
 import { NativeAppEventEmitter, NativeModules } from 'react-native';
 import * as RealmTests from 'realm-tests';
+import WorkerTest from 'realm-tests/worker-tests';
 import ListViewTest from './listview-test';
 
 RealmTests.registerTests({
     ListViewTest,
+    WorkerTest,
 });
 
 // Listen for event to run a particular test.

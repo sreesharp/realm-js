@@ -25,16 +25,22 @@ const TestCase = require('./asserts');
 const schemas = require('./schemas');
 const Worker = require('./worker');
 
+function createWorker() {
+    let prefix = (typeof __dirname == 'string') ? __dirname + '/' : '';
+    return new Worker(prefix + 'worker-tests-script.js');
+}
+
 module.exports = {
     testChangeNotifications() {
         return new Promise((resolve, reject) => {
             let config = {schema: [schemas.TestObject]};
             let realm = new Realm(config);
             let objects = realm.objects('TestObject');
-            let worker = new Worker(__dirname + '/worker-tests-script.js');
+            let worker = createWorker();
 
             // Test will fail if it does not receive a change event within a second.
             let timer = setTimeout(() => {
+                worker.terminate();
                 reject(new Error('Timed out waiting for change notification'));
             }, 1000);
 
